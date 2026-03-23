@@ -232,7 +232,7 @@ For plain messages:
 [0.123s] path/to/file.py:42 some text
 ```
 
-# Example
+# Example 1 - Factorial
 
 ```python
 from logeye import *
@@ -300,6 +300,116 @@ Output:
 
 Process finished with exit code 0
 ```
+
+## Example 2 - Dijkstra
+```python
+from logeye import *
+
+l("DIJKSTRA - SHORTEST PATH")
+
+
+@log
+def dijkstra(graph, start):
+	distances = {node: float("inf") for node in graph}
+	distances[start] = 0
+
+	visited = set()
+	queue = [(0, start)]
+
+	while queue:
+		current_dist, node = queue.pop(0)
+
+		if node in visited:
+			continue
+
+		visited.add(node)
+
+		for neighbor, weight in graph[node].items():
+			new_dist = current_dist + weight
+
+			if new_dist < distances[neighbor]:
+				distances[neighbor] = new_dist
+				queue.append((new_dist, neighbor))
+
+		queue.sort()
+
+	return distances
+
+
+graph = {
+	"A": {"B": 1, "C": 4},
+	"B": {"C": 2, "D": 5},
+	"C": {"D": 1},
+	"D": {}
+}
+
+dijkstra(graph, "A")
+```
+
+```commandline
+[0.002s] demo_dijkstra.py:3 DIJKSTRA - SHORTEST PATH
+[0.002s] demo_dijkstra.py:41 (call) dijkstra = {'args': ({'A': {'B': 1, 'C': 4}, 'B': {'C': 2, 'D': 5}, 'C': {'D': 1}, 'D': {}}, 'A'), 'kwargs': {}}
+[0.002s] demo_dijkstra.py:8 (set) dijkstra.graph = LoggedDict({'A': LoggedDict({'B': 1, 'C': 4}), 'B': LoggedDict({'C': 2, 'D': 5}), 'C': LoggedDict({'D': 1}), 'D': LoggedDict({})})
+[0.002s] demo_dijkstra.py:8 (set) dijkstra.start = 'A'
+[0.002s] demo_dijkstra.py:8 (set) dijkstra.node = 'A'
+[0.002s] demo_dijkstra.py:8 (set) dijkstra.node = 'B'
+[0.002s] demo_dijkstra.py:8 (set) dijkstra.node = 'C'
+[0.002s] demo_dijkstra.py:8 (set) dijkstra.node = 'D'
+[0.003s] demo_dijkstra.py:9 (set) dijkstra.distances = LoggedDict({'A': inf, 'B': inf, 'C': inf, 'D': inf})
+[0.003s] demo_dijkstra.py:9 (change) dijkstra.distances = {'op': 'setitem', 'key': 'A', 'value': 0, 'state': {'A': 0, 'B': inf, 'C': inf, 'D': inf}}
+[0.003s] demo_dijkstra.py:12 (set) dijkstra.visited = LoggedSet(set())
+[0.003s] demo_dijkstra.py:14 (set) dijkstra.queue = LoggedList([(0, 'A')])
+[0.003s] demo_dijkstra.py:15 (change) dijkstra.queue = {'op': 'pop', 'index': 0, 'value': (0, 'A'), 'state': []}
+[0.003s] demo_dijkstra.py:17 (set) dijkstra.node = 'A'
+[0.003s] demo_dijkstra.py:17 (set) dijkstra.current_dist = 0
+[0.003s] demo_dijkstra.py:20 (change) dijkstra.visited = {'op': 'add', 'value': 'A', 'state': {'A'}}
+[0.003s] demo_dijkstra.py:23 (set) dijkstra.neighbor = 'B'
+[0.003s] demo_dijkstra.py:23 (set) dijkstra.weight = 1
+[0.003s] demo_dijkstra.py:25 (set) dijkstra.new_dist = 1
+[0.003s] demo_dijkstra.py:26 (change) dijkstra.distances = {'op': 'setitem', 'key': 'B', 'value': 1, 'state': {'A': 0, 'B': 1, 'C': inf, 'D': inf}}
+[0.003s] demo_dijkstra.py:27 (change) dijkstra.queue = {'op': 'append', 'value': (1, 'B'), 'state': [(1, 'B')]}
+[0.003s] demo_dijkstra.py:23 (set) dijkstra.neighbor = 'C'
+[0.003s] demo_dijkstra.py:23 (set) dijkstra.weight = 4
+[0.003s] demo_dijkstra.py:25 (set) dijkstra.new_dist = 4
+[0.003s] demo_dijkstra.py:26 (change) dijkstra.distances = {'op': 'setitem', 'key': 'C', 'value': 4, 'state': {'A': 0, 'B': 1, 'C': 4, 'D': inf}}
+[0.003s] demo_dijkstra.py:27 (change) dijkstra.queue = {'op': 'append', 'value': (4, 'C'), 'state': [(1, 'B'), (4, 'C')]}
+[0.003s] demo_dijkstra.py:29 (change) dijkstra.queue = {'op': 'sort', 'args': (), 'kwargs': {}, 'state': [(1, 'B'), (4, 'C')]}
+[0.003s] demo_dijkstra.py:15 (change) dijkstra.queue = {'op': 'pop', 'index': 0, 'value': (1, 'B'), 'state': [(4, 'C')]}
+[0.003s] demo_dijkstra.py:17 (set) dijkstra.node = 'B'
+[0.003s] demo_dijkstra.py:17 (set) dijkstra.current_dist = 1
+[0.003s] demo_dijkstra.py:20 (change) dijkstra.visited = {'op': 'add', 'value': 'B', 'state': {'B', 'A'}}
+[0.003s] demo_dijkstra.py:23 (set) dijkstra.weight = 2
+[0.003s] demo_dijkstra.py:25 (set) dijkstra.new_dist = 3
+[0.003s] demo_dijkstra.py:26 (change) dijkstra.distances = {'op': 'setitem', 'key': 'C', 'value': 3, 'state': {'A': 0, 'B': 1, 'C': 3, 'D': inf}}
+[0.003s] demo_dijkstra.py:27 (change) dijkstra.queue = {'op': 'append', 'value': (3, 'C'), 'state': [(4, 'C'), (3, 'C')]}
+[0.003s] demo_dijkstra.py:23 (set) dijkstra.neighbor = 'D'
+[0.004s] demo_dijkstra.py:23 (set) dijkstra.weight = 5
+[0.004s] demo_dijkstra.py:25 (set) dijkstra.new_dist = 6
+[0.004s] demo_dijkstra.py:26 (change) dijkstra.distances = {'op': 'setitem', 'key': 'D', 'value': 6, 'state': {'A': 0, 'B': 1, 'C': 3, 'D': 6}}
+[0.004s] demo_dijkstra.py:27 (change) dijkstra.queue = {'op': 'append', 'value': (6, 'D'), 'state': [(4, 'C'), (3, 'C'), (6, 'D')]}
+[0.004s] demo_dijkstra.py:29 (change) dijkstra.queue = {'op': 'sort', 'args': (), 'kwargs': {}, 'state': [(3, 'C'), (4, 'C'), (6, 'D')]}
+[0.004s] demo_dijkstra.py:15 (change) dijkstra.queue = {'op': 'pop', 'index': 0, 'value': (3, 'C'), 'state': [(4, 'C'), (6, 'D')]}
+[0.004s] demo_dijkstra.py:17 (set) dijkstra.node = 'C'
+[0.004s] demo_dijkstra.py:17 (set) dijkstra.current_dist = 3
+[0.004s] demo_dijkstra.py:20 (change) dijkstra.visited = {'op': 'add', 'value': 'C', 'state': {'C', 'A', 'B'}}
+[0.004s] demo_dijkstra.py:23 (set) dijkstra.weight = 1
+[0.004s] demo_dijkstra.py:25 (set) dijkstra.new_dist = 4
+[0.004s] demo_dijkstra.py:26 (change) dijkstra.distances = {'op': 'setitem', 'key': 'D', 'value': 4, 'state': {'A': 0, 'B': 1, 'C': 3, 'D': 4}}
+[0.004s] demo_dijkstra.py:27 (change) dijkstra.queue = {'op': 'append', 'value': (4, 'D'), 'state': [(4, 'C'), (6, 'D'), (4, 'D')]}
+[0.004s] demo_dijkstra.py:29 (change) dijkstra.queue = {'op': 'sort', 'args': (), 'kwargs': {}, 'state': [(4, 'C'), (4, 'D'), (6, 'D')]}
+[0.004s] demo_dijkstra.py:15 (change) dijkstra.queue = {'op': 'pop', 'index': 0, 'value': (4, 'C'), 'state': [(4, 'D'), (6, 'D')]}
+[0.004s] demo_dijkstra.py:17 (set) dijkstra.current_dist = 4
+[0.004s] demo_dijkstra.py:15 (change) dijkstra.queue = {'op': 'pop', 'index': 0, 'value': (4, 'D'), 'state': [(6, 'D')]}
+[0.004s] demo_dijkstra.py:17 (set) dijkstra.node = 'D'
+[0.004s] demo_dijkstra.py:20 (change) dijkstra.visited = {'op': 'add', 'value': 'D', 'state': {'D', 'C', 'A', 'B'}}
+[0.004s] demo_dijkstra.py:29 (change) dijkstra.queue = {'op': 'sort', 'args': (), 'kwargs': {}, 'state': [(6, 'D')]}
+[0.004s] demo_dijkstra.py:15 (change) dijkstra.queue = {'op': 'pop', 'index': 0, 'value': (6, 'D'), 'state': []}
+[0.005s] demo_dijkstra.py:17 (set) dijkstra.current_dist = 6
+[0.005s] demo_dijkstra.py:31 (return) dijkstra = LoggedDict({'A': 0, 'B': 1, 'C': 3, 'D': 4})
+
+Process finished with exit code 0
+```
+
 
 # Inspiration
 Idea came to be during Warsaw IT Days 2026. During the Python lecture "Logging module adventures".  

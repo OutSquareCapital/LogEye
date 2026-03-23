@@ -10,8 +10,15 @@ from .introspection.ast import (
 	_infer_name_from_frame,
 	_get_assignment_target_for_call,
 )
-from .wrappers import LoggedObject, _path
 from .introspection.templates import _expand_template
+from .wrappers import (
+	LoggedObject,
+	LoggedList,
+	LoggedDict,
+	LoggedSet,
+	_wrap_value,
+	_path,
+)
 from .introspection.frames import _caller_frame, _get_location
 
 
@@ -135,6 +142,12 @@ def _log_function(func):
 
 					for key, value in current.items():
 						old = last_values.get(key, object())
+
+						if not isinstance(value, (LoggedObject, LoggedList, LoggedDict, LoggedSet)):
+							wrapped = _wrap_value(value, name=f"{call_name}.{key}")
+							if wrapped is not value:
+								frame.f_locals[key] = wrapped
+								value = wrapped
 
 						if old != value:
 							if callable(value):
