@@ -445,5 +445,5 @@ MIT License © 2026
 
 See [LICENSE](LICENSE) for details.
 
-Version 1.1.3
+Version 1.1.4
 

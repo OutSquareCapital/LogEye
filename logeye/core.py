@@ -44,7 +44,8 @@ def _log_class(cls):
 		@functools.wraps(original_init)
 		def __init__(self, *args, **kwargs):
 			if not config._ENABLED:
-				return original_init(self, *args, **kwargs)
+				original_init(self, *args, **kwargs)
+				return
 
 			call_frame = _caller_frame()
 			call_filename, call_lineno = _get_location(call_frame)
