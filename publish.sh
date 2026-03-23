@@ -49,6 +49,16 @@ if [[ -f README.md ]]; then
   sed -i -E "s/Version [0-9]+\.[0-9]+\.[0-9]+/Version $VERSION/" README.md
 fi
 
+echo "==> Updating README badge cache"
+
+if [[ -f README.md ]]; then
+  CACHE_BUST=$(date +%s)
+
+  sed -i -E \
+    "s|https://img.shields.io/pypi/v/logeye(\?[^)]*)?|https://img.shields.io/pypi/v/logeye?cachebust=$CACHE_BUST|g" \
+    README.md
+fi
+
 echo "==> Extracting changelog"
 
 if [[ ! -f CHANGELOG.md ]]; then
