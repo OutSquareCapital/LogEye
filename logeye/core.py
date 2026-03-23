@@ -37,23 +37,52 @@ def _log_class(cls):
 	"""
 
 	original_init = cls.__init__
+	class_name = cls.__name__.lower()
+	qualname = cls.__qualname__.replace(".<locals>.", ".")
 
-	@functools.wraps(original_init)
-	def new_init(self, *args, **kwargs):
-		# Wrap for tracking
-		wrapped_self = LoggedObject(self, name=cls.__name__.lower())
+	class LoggedClass(cls):
+		@functools.wraps(original_init)
+		def __init__(self, *args, **kwargs):
+			if not config._ENABLED:
+				return original_init(self, *args, **kwargs)
 
-		# Replace self in-place
-		object.__setattr__(wrapped_self, "_data", {})
-		object.__setattr__(wrapped_self, "_log_name", cls.__name__.lower())
+			call_frame = _caller_frame()
+			call_filename, call_lineno = _get_location(call_frame)
 
-		# Run original init on wrapped object
-		original_init(wrapped_self, *args, **kwargs)
+			_emit(
+				"call",
+				f"{qualname}.__init__",
+				{"args": args, "kwargs": kwargs},
+				filename=call_filename,
+				lineno=call_lineno,
+			)
 
-		return None
+			original_init(self, *args, **kwargs)
 
-	cls.__init__ = _log_function(new_init)
-	return cls
+		def __setattr__(self, name, value):
+			if name.startswith("_"):
+				object.__setattr__(self, name, value)
+				return
+
+			wrapped = _wrap_value(value, name=f"{class_name}.{name}")
+			object.__setattr__(self, name, wrapped)
+
+			frame = _caller_frame()
+			try:
+				filename, lineno = _get_location(frame)
+
+				if callable(wrapped):
+					_emit("set", f"{class_name}.{name}", f"<func {_path(wrapped)}>", filename=filename, lineno=lineno)
+				else:
+					_emit("set", f"{class_name}.{name}", wrapped, filename=filename, lineno=lineno)
+			finally:
+				del frame
+
+	LoggedClass.__name__ = cls.__name__
+	LoggedClass.__qualname__ = cls.__qualname__
+	LoggedClass.__module__ = cls.__module__
+
+	return LoggedClass
 
 
 # =====================

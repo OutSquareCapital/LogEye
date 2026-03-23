@@ -271,7 +271,26 @@ class LoggedList(list):
 
 		wrapped = _wrap_value(value, name=f"{self._log_name}[{key}]")
 		super().__setitem__(key, wrapped)
-		self._emit("setitem", key=key, value=value)
+
+		frame = _caller_frame()
+		try:
+			filename, lineno = _get_location(frame)
+
+			full_name = f"{self._log_name}.{key}"
+
+			_emit(
+				"change",
+				full_name,
+				{
+					"op": "setitem",
+					"value": _unwrap_value(value),
+					"state": _unwrap_value(self),
+				},
+				filename=filename,
+				lineno=lineno,
+			)
+		finally:
+			del frame
 
 	def __delitem__(self, key):
 		super().__delitem__(key)
@@ -363,11 +382,49 @@ class LoggedDict(dict):
 	def __setitem__(self, key, value):
 		wrapped = _wrap_value(value, name=f"{self._log_name}.{key}")
 		super().__setitem__(key, wrapped)
-		self._emit("setitem", key=key, value=value)
+		frame = _caller_frame()
+
+		try:
+			filename, lineno = _get_location(frame)
+
+			full_name = f"{self._log_name}.{key}"
+
+			_emit(
+				"change",
+				full_name,
+				{
+					"op": "setitem",
+					"value": _unwrap_value(value),
+					"state": _unwrap_value(self),
+				},
+				filename=filename,
+				lineno=lineno,
+			)
+		finally:
+			del frame
 
 	def __delitem__(self, key):
 		super().__delitem__(key)
 		self._emit("delitem", key=key)
+
+	def __getattr__(self, name):
+		try:
+			return self[name]
+		except KeyError as e:
+			raise AttributeError(name) from e
+
+	def __setattr__(self, name, value):
+		if name.startswith("_"):
+			object.__setattr__(self, name, value)
+			return
+
+		self[name] = value
+
+	def __delattr__(self, name):
+		if name.startswith("_"):
+			raise AttributeError(name)
+
+		del self[name]
 
 	def update(self, *args, **kwargs):
 		data = dict(*args, **kwargs)
