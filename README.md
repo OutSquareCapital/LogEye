@@ -1,6 +1,6 @@
-![PyPI](https://img.shields.io/pypi/v/logeye?cacheSeconds=60)
-![Python](https://img.shields.io/pypi/pyversions/logeye?cacheSeconds=60)
-![License](https://img.shields.io/github/license/MattFor/LogEye?cacheSeconds=60)
+![PyPI](https://img.shields.io/pypi/v/logeye?cacheSeconds=120)
+![Python](https://img.shields.io/pypi/pyversions/logeye?cacheSeconds=120)
+![License](https://img.shields.io/github/license/MattFor/LogEye?cacheSeconds=120)
 
 # LogEye
 
