@@ -16,7 +16,7 @@ pip install logeye
 
 LogEye is for people who want to understand exactly what happens, when and where in their code. (Python beginners rejoice!)
 
-**No more print() debugging everywhere, no more need to launch the debugger for moderate, everything's automatic!**
+**No more print() debugging everywhere, no more need to launch the debugger, everything's automatic!**
 
 It's incredibly useful in quickly seeing how algorithms work without hooking up frameworks or debuggers!  
 
