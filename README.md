@@ -1,4 +1,4 @@
-![PyPI](https://img.shields.io/pypi/v/logeye?w)
+![PyPI](https://img.shields.io/pypi/v/logeye?wwwww)
 ![Python](https://img.shields.io/pypi/pyversions/logeye?w)
 ![License](https://img.shields.io/github/license/MattFor/LogEye?w)
 
