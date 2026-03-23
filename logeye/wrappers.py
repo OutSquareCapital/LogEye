@@ -239,7 +239,7 @@ class LoggedObject:
 		return {k: unwrap(v) for k, v in self._data.items()}
 
 	def __repr__(self):
-		return f"{type(self).__name__}({self._data!r})"
+		return repr(self.to_dict())  # f"{type(self).__name__}({self._data!r})"
 
 	def __dir__(self):
 		return sorted(set(super().__dir__()) | set(self._data.keys()))
@@ -350,7 +350,7 @@ class LoggedList(list):
 		return [_unwrap_value(v) for v in list(self)]
 
 	def __repr__(self):
-		return f"{type(self).__name__}({list(self)!r})"
+		return repr(self.to_list())  # f"{type(self).__name__}({list(self)!r})"
 
 
 class LoggedDict(dict):
@@ -468,7 +468,7 @@ class LoggedDict(dict):
 		return {k: _unwrap_value(v) for k, v in dict.items(self)}
 
 	def __repr__(self):
-		return f"{type(self).__name__}({dict(self)!r})"
+		return repr(self.to_dict())  # f"{type(self).__name__}({dict(self)!r})"
 
 
 class LoggedSet(set):
@@ -559,7 +559,7 @@ class LoggedSet(set):
 		return {_unwrap_value(v) for v in set(self)}
 
 	def __repr__(self):
-		return f"{type(self).__name__}({set(self)!r})"
+		return repr(self.to_set())  # f"{type(self).__name__}({set(self)!r})"
 
 
 __all__ = [

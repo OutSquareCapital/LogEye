@@ -1,6 +1,6 @@
-![PyPI](https://img.shields.io/pypi/v/logeye?wwwww)
-![Python](https://img.shields.io/pypi/pyversions/logeye?w)
-![License](https://img.shields.io/github/license/MattFor/LogEye?w)
+![PyPI](https://img.shields.io/pypi/v/logeye?123123)
+![Python](https://img.shields.io/pypi/pyversions/logeye?123123)
+![License](https://img.shields.io/github/license/MattFor/LogEye?123123)
 
 # LogEye
 
@@ -445,5 +445,5 @@ MIT License © 2026
 
 See [LICENSE](LICENSE) for details.
 
-Version 1.1.2
+Version 1.1.3
 
