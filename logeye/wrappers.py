@@ -78,6 +78,10 @@ def _wrap_value(value, name=None):
 	- objects with __dict__ -> LoggedObject
 	- already wrapped -> returned as-is
 	"""
+
+	if callable(value):
+		return value
+
 	if isinstance(
 			value,
 			(LoggedObject, LoggedList, LoggedDict, LoggedSet),

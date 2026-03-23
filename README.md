@@ -429,7 +429,7 @@ I thought there definitely was an easier way to do it without repeating yourself
 * object wrapping only supports mappings and objects with `__dict__`
 * custom objects with unusual attribute behaviour may not be fully tracked
 * logging output is intended for debugging and introspection, not structured logging or production telemetry
-
+* local variables may be wrapped at runtime to enable mutation tracking, which can affect identity checks and edge-case behaviour
 
 ## Contact
 
@@ -445,5 +445,5 @@ MIT License © 2026
 
 See [LICENSE](LICENSE) for details.
 
-Version 1.1.1
+Version 1.1.2
 

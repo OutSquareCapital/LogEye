@@ -2,3 +2,4 @@ rm -rf dist build *.egg-info
 python -m build
 python -m twine check dist/*
 python -m twine upload dist/*
+git tag vX.X.X
