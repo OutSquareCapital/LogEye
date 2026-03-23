@@ -47,21 +47,6 @@ Name inference is not always 100% accurate, however I've tried to the best of my
 * customise output formatting, metadata visibility, and file path display modes
 * automatically label recurrency / nested calls f.e `factorial factorial_2 factorial_3`
 
-## Limitations
-
-* variable name inference is **best-effort** and may fail in complex or highly dynamic expressions
-* some edge cases (e.g. deeply nested calls, chained expressions, unusual syntax) may fall back to a generic name like
-  `"set"`
-* lambda functions are **not automatically traced** unless explicitly wrapped with `log()`
-* function tracing relies on `sys.settrace()` and may introduce overhead in performance-sensitive code
-* logging inside heavily recursive or multithreaded code may produce noisy or hard-to-follow output
-* AST-based analysis requires access to source files and may not work correctly in environments without source code (
-  e.g. compiled/obfuscated code, some REPLs)
-* tuple assignment tracking depends on call order and may behave unexpectedly in complex expressions
-* object wrapping only supports mappings and objects with `__dict__`
-* custom objects with unusual attribute behaviour may not be fully tracked
-* logging output is intended for debugging and introspection, not structured logging or production telemetry
-
 ## Quick start
 
 ```python
@@ -319,6 +304,22 @@ Process finished with exit code 0
 # Inspiration
 Idea came to be during Warsaw IT Days 2026. During the Python lecture "Logging module adventures".  
 I thought there definitely was an easier way to do it without repeating yourself constantly, and it turns out there was!
+
+## Limitations
+
+* variable name inference is **best-effort** and may fail in complex or highly dynamic expressions
+* some edge cases (e.g. deeply nested calls, chained expressions, unusual syntax) may fall back to a generic name like
+  `"set"`
+* lambda functions are **not automatically traced** unless explicitly wrapped with `log()`
+* function tracing relies on `sys.settrace()` and may introduce overhead in performance-sensitive code
+* logging inside heavily recursive or multithreaded code may produce noisy or hard-to-follow output
+* AST-based analysis requires access to source files and may not work correctly in environments without source code (
+  e.g. compiled/obfuscated code, some REPLs)
+* tuple assignment tracking depends on call order and may behave unexpectedly in complex expressions
+* object wrapping only supports mappings and objects with `__dict__`
+* custom objects with unusual attribute behaviour may not be fully tracked
+* logging output is intended for debugging and introspection, not structured logging or production telemetry
+
 
 ## Contact
 
