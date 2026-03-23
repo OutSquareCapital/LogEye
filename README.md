@@ -1,6 +1,6 @@
-![PyPI](https://img.shields.io/pypi/v/logeye?123123)
-![Python](https://img.shields.io/pypi/pyversions/logeye?123123)
-![License](https://img.shields.io/github/license/MattFor/LogEye?123123)
+![PyPI](https://img.shields.io/pypi/v/logeye?qseqse)
+![Python](https://img.shields.io/pypi/pyversions/logeye?qseqse)
+![License](https://img.shields.io/github/license/MattFor/LogEye?sqwesqes)
 
 # LogEye
 
@@ -200,22 +200,6 @@ func(elapsed, kind, name, value, filename, lineno)
 ### `reset_output_formatter()`
 
 Restore the built-in formatter.
-
-## Using `LoggedObject` directly
-
-```python
-from logeye import LoggedObject
-
-obj = LoggedObject({"a": 1, "nested": {"b": 2}}, name="data")
-obj.a = 5
-obj.nested.b = 9
-```
-
-Convert it back to a plain dictionary with:
-
-```python
-plain = obj.to_dict()
-```
 
 ## Output format
 
@@ -445,5 +429,5 @@ MIT License © 2026
 
 See [LICENSE](LICENSE) for details.
 
-Version 1.1.4
+Version 1.1.5
 
