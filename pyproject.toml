@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=77.0.3", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "logeye"
+version = "0.1.0"
+description = "Frictionless runtime logging for Python variables and functions"
+readme = "README.md"
+requires-python = ">=3.10"
+
+authors = [
+    { name = "MattFor", email = "mattfor@relaxy.xyz" }
+]
+
+license = { file = "LICENSE" }
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/MattFor/LogEye"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["logeye*"]
