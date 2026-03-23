@@ -19,32 +19,23 @@ if [[ -z "$VERSION" || -z "$COMMIT_MSG" ]]; then
   usage
 fi
 
-# Prevent issues
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "Error: version must be in format X.Y.Z"
   exit 1
 fi
 
-if ! command -v python >/dev/null 2>&1; then
-  echo "Error: python not found in PATH"
-  exit 1
-fi
-
-if ! command -v twine >/dev/null 2>&1; then
-  echo "Error: twine not found in PATH"
-  exit 1
-fi
-
-if ! command -v git >/dev/null 2>&1; then
-  echo "Error: git not found in PATH"
-  exit 1
-fi
+for cmd in python twine git gh; do
+  if ! command -v $cmd >/dev/null 2>&1; then
+    echo "Error: $cmd not found in PATH"
+    exit 1
+  fi
+done
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
 if [[ ! -f pyproject.toml ]]; then
-  echo "Error: pyproject.toml not found in $ROOT_DIR"
+  echo "Error: pyproject.toml not found"
   exit 1
 fi
 
@@ -53,9 +44,27 @@ echo "==> Updating version to $VERSION"
 # Update pyproject.toml
 sed -i -E "s/version = \"[0-9]+\.[0-9]+\.[0-9]+\"/version = \"$VERSION\"/" pyproject.toml
 
-# Update README.md (Version X.X.X)
+# Update README.md
 if [[ -f README.md ]]; then
   sed -i -E "s/Version [0-9]+\.[0-9]+\.[0-9]+/Version $VERSION/" README.md
+fi
+
+echo "==> Extracting changelog"
+
+if [[ ! -f CHANGELOG.md ]]; then
+  echo "Error: CHANGELOG.md not found"
+  exit 1
+fi
+
+CHANGELOG_CONTENT=$(awk -v ver="$VERSION" '
+  $0 ~ "^## \\[" ver "\\]" {flag=1; next}
+  $0 ~ "^## \\[" && flag {exit}
+  flag
+' CHANGELOG.md)
+
+if [[ -z "$CHANGELOG_CONTENT" ]]; then
+  echo "Error: Version $VERSION not found in CHANGELOG.md"
+  exit 1
 fi
 
 echo "==> Running tests"
@@ -81,5 +90,11 @@ git tag "v$VERSION"
 
 echo "==> Pushing commit and tags"
 git push origin master --tags
+
+echo "==> Creating GitHub release"
+
+gh release create "v$VERSION" \
+  --title "v$VERSION" \
+  --notes "$CHANGELOG_CONTENT"
 
 echo "==> Done"
