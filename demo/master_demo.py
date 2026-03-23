@@ -114,10 +114,10 @@ log("\n\n=== ENABLE / DISABLE ===")
 
 log("this should appear")
 
-logoff()
+toggle_logs(False)
 log("this should NOT appear")
 
-logon()
+toggle_logs(True)
 log("logging back on")
 
 log("\n\n=== MIXED USAGE ===")

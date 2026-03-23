@@ -21,12 +21,20 @@ from .wrappers import (
 )
 from .introspection.frames import _caller_frame, _get_location
 
+_NO_VALUE = object()
+
+
+def _resolve_filepath(file=None, filepath=None):
+	if file is not None and filepath is not None:
+		raise TypeError("Use only one of 'file' or 'filepath'")
+	return file if file is not None else filepath
+
 
 # ===============
 #  CLASS LOGGING
 # ===============
 
-def _log_class(cls):
+def _log_class(cls, *, filepath=None):
 	"""
 	Wrap a class so its instances become LoggedObjects
 
@@ -56,6 +64,7 @@ def _log_class(cls):
 				{"args": args, "kwargs": kwargs},
 				filename=call_filename,
 				lineno=call_lineno,
+				filepath=filepath
 			)
 
 			original_init(self, *args, **kwargs)
@@ -73,9 +82,10 @@ def _log_class(cls):
 				filename, lineno = _get_location(frame)
 
 				if callable(wrapped):
-					_emit("set", f"{class_name}.{name}", f"<func {_path(wrapped)}>", filename=filename, lineno=lineno)
+					_emit("set", f"{class_name}.{name}", f"<func {_path(wrapped)}>", filename=filename, lineno=lineno,
+					      filepath=filepath)
 				else:
-					_emit("set", f"{class_name}.{name}", wrapped, filename=filename, lineno=lineno)
+					_emit("set", f"{class_name}.{name}", wrapped, filename=filename, lineno=lineno, filepath=filepath)
 			finally:
 				del frame
 
@@ -95,7 +105,7 @@ def watch(value, name=None):
 	Log without changing behaviour
 	"""
 
-	if not config._ENABLED:
+	if not config._ENABLED or config._DECORATORS_ONLY:
 		return value
 
 	frame = _caller_frame()
@@ -123,7 +133,7 @@ def watch(value, name=None):
 #     FUNCTION LOGGING
 # ========================
 
-def _log_function(func):
+def _log_function(func, *, filepath=None, level="full", filter_set=None):
 	"""
 	Wrap a function to trace:
 	- calls (arguments)
@@ -149,16 +159,34 @@ def _log_function(func):
 		call_id = call_counter
 		call_name = f"{func_path}{'' if call_counter == 1 else f'_{call_id}'}"
 
+		def _should_emit(kind, name):
+			# LEVEL CONTROL
+			if level == "call" and kind not in ("call", "return"):
+				return False
+
+			if level == "state" and kind == "call":
+				return False
+
+			# FILTER CONTROL
+			if filter_set:
+				var_name = name.split(".")[-1]
+				if var_name not in filter_set:
+					return False
+
+			return True
+
 		call_frame = _caller_frame()
 		call_filename, call_lineno = _get_location(call_frame)
 
-		_emit(
-			"call",
-			call_name,
-			{"args": args, "kwargs": kwargs},
-			filename=call_filename,
-			lineno=call_lineno,
-		)
+		if _should_emit("call", call_name):
+			_emit(
+				"call",
+				call_name,
+				{"args": args, "kwargs": kwargs},
+				filename=call_filename,
+				lineno=call_lineno,
+				filepath=filepath
+			)
 
 		last_values = {}
 
@@ -179,35 +207,42 @@ def _log_function(func):
 								frame.f_locals[key] = wrapped
 								value = wrapped
 
+						name = f"{call_name}.{key}"
 						if old != value:
 							if callable(value):
 								display = _path(value)
-								_emit(
-									"set",
-									f"{call_name}.{key}",
-									f"<func {display}>",
-									filename=filename,
-									lineno=lineno,
-								)
+								if _should_emit("set", name):
+									_emit(
+										"set",
+										name,
+										f"<func {display}>",
+										filename=filename,
+										lineno=lineno,
+										filepath=filepath
+									)
 							else:
-								_emit(
-									"set",
-									f"{call_name}.{key}",
-									value,
-									filename=filename,
-									lineno=lineno,
-								)
+								if _should_emit("set", name):
+									_emit(
+										"set",
+										name,
+										value,
+										filename=filename,
+										lineno=lineno,
+										filepath=filepath
+									)
 
 							last_values[key] = value
 
 				elif event == "return":
-					_emit(
-						"return",
-						call_name,
-						arg,
-						filename=filename,
-						lineno=lineno,
-					)
+					if _should_emit("return", call_name):
+						_emit(
+							"return",
+							call_name,
+							arg,
+							filename=filename,
+							lineno=lineno,
+							filepath=filepath
+						)
 
 			return tracer
 
@@ -227,6 +262,9 @@ def _log_function(func):
 # ========================
 
 def _log_object(obj, name=None):
+	if not config._ENABLED or config._DECORATORS_ONLY:
+		return obj
+
 	if name is None:
 		frame = _caller_frame()
 		try:
@@ -262,6 +300,9 @@ def _log_message(text, *args, **kwargs):
 		else:
 			rendered = _expand_template(text)
 
+		if not config._ENABLED or config._DECORATORS_ONLY:
+			return rendered
+
 		name = _get_assignment_target_for_call(frame)
 		filename, lineno = _get_location(frame)
 
@@ -280,7 +321,7 @@ def _log_message(text, *args, **kwargs):
 #   PUBLIC ENTRYPOINT
 # =====================
 
-def log(obj, *args, **kwargs):
+def log(obj=_NO_VALUE, *args, file=None, filepath=None, level="full", filter=None, **kwargs):
 	"""
 	Dispatches behaviour based on input type:
 
@@ -291,11 +332,33 @@ def log(obj, *args, **kwargs):
 	- other     -> simple value logging
 	"""
 
+	deco_path = _resolve_filepath(file=file, filepath=filepath)
+
+	if obj is _NO_VALUE:
+		def decorator(target):
+			if inspect.isclass(target):
+				return _log_class(target, filepath=deco_path)
+			if callable(target):
+				return _log_function(
+					target,
+					filepath=deco_path,
+					level=level,
+					filter_set=set(filter) if filter else None,
+				)
+			raise TypeError("@log(...) can only decorate a function or class")
+
+		return decorator
+
 	if inspect.isclass(obj):
-		return _log_class(obj)
+		return _log_class(obj, filepath=deco_path)
 
 	if callable(obj):
-		return _log_function(obj)
+		return _log_function(
+			obj,
+			filepath=deco_path,
+			level=level,
+			filter_set=set(filter) if filter else None
+		)
 
 	if isinstance(obj, str):
 		return _log_message(obj, *args, **kwargs)

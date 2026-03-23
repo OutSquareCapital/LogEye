@@ -34,6 +34,7 @@ Name inference is not always 100% accurate, however I've tried to the best of my
 * log values as they are assigned, with automatic variable name inference (including tuple assignments and multi-line
   statements)
 * wrap mappings and objects to track attribute and item changes in real time
+* control logging verbosity, filtering, and output destination directly from `@log(...)`
 * emit JSON-like snapshots of objects on creation, followed by granular change logs
 * recursively track nested data structures (dicts, lists, tuples, sets)
 * log functions to capture calls, arguments, local variable changes, and return values
@@ -55,6 +56,15 @@ from logeye import log
 x = log(10)
 message = log("Hello from {name}", name="Matt")
 
+
+@log(level="call")
+def add(a, b):
+	something = 2 + 2
+	return a + b
+
+
+add(2, 2)
+
 name = "Matt"
 message2 = log("Hello from $name")
 
@@ -66,11 +76,14 @@ config["debug"] = False
 Example output:
 
 ```commandline
-[0.000s] demo6.py:3 (set) x = 10
-[0.000s] demo6.py:4 (set) message = 'Hello from Matt'
-[0.000s] demo6.py:7 (set) message2 = 'Hello from Matt'
-[0.001s] demo6.py:10 (change) config.port = 9090
-[0.001s] demo6.py:11 (change) config.debug = False
+[0.000s] playground.py:3 (set) x = 10
+[0.000s] playground.py:4 (set) message = 'Hello from Matt'
+[0.000s] playground.py:13 (call) add = {'args': (2, 2), 'kwargs': {}}
+[0.000s] playground.py:10 (return) add = 4
+[0.000s] playground.py:16 (set) message2 = 'Hello from Matt'
+[0.001s] playground.py:18 (set) config = {'debug': True, 'port': 8080}
+[0.001s] playground.py:19 (set) config.port = 9090
+[0.001s] playground.py:20 (set) config.debug = False
 ```
 
 ## Logging functions
@@ -103,6 +116,61 @@ This will log:
 * the function call
 * local variable changes inside the function
 * the return value
+
+## Advanced function logging
+
+You can customise how functions are logged using `@log(...)`:
+
+### Control verbosity
+
+```python
+from logeye import log
+
+@log(level="call")
+def foo():
+	x = 10
+	return x
+```
+
+#### Levels:
+* "call" - only function calls and returns
+* "state" - variable changes only (no call spam)
+* "full" - full tracing (default)
+
+```python
+from logeye import log
+
+@log(filter=["x"])
+def foo():
+	x = 10
+	y = 20
+	return x + y
+```
+
+Only selected variables will be logged.
+
+```python
+from logeye import log
+
+@log(filepath="logs/my_func.log")
+def foo():
+	x = 10
+	return x
+```
+
+Logs for this function will be written to a file instead of stdout.
+
+### Combos
+
+```python
+from logeye import log
+
+@log(level="state", filter=["queue"], filepath="queue.log")
+def process():
+	queue = []
+	queue.append(1)
+	queue.append(2)
+```
 
 ## Logging objects
 
@@ -173,7 +241,7 @@ Email: mattfor@relaxy.xyz
 
 Wraps a value for logging without changing its type unless needed.
 
-### `logoff()` / `logon()`
+### `toggle_logs(True/False)`
 
 Disable or enable logging globally.
 
@@ -215,6 +283,19 @@ For plain messages:
 ```commandline
 [0.123s] path/to/file.py:42 some text
 ```
+
+### File logging
+
+```python
+from logeye.config import set_global_log_file, toggle_global_log_file
+
+set_global_log_file("logs/app.log")
+toggle_global_log_file(True)
+```
+
+All logs will now be written to the specified file.
+To disable: `toggle_global_log_file(False)`
+
 
 # Example 1 - Factorial
 
@@ -429,5 +510,5 @@ MIT License © 2026
 
 See [LICENSE](LICENSE) for details.
 
-Version 1.1.5
+Version 1.2.0
 
