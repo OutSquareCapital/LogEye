@@ -1,4 +1,4 @@
-from logeye import *
+from logeye import log
 
 l("FACTORIAL - BY ITERATION")
 

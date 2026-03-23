@@ -1,4 +1,4 @@
-from logeye import *
+from logeye import log, watch, set_path_mode
 
 set_path_mode("project")
 

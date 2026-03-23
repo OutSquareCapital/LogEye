@@ -1,8 +1,4 @@
-from logeye import log
-from logeye.config import (
-	set_global_log_file,
-	toggle_global_log_file,
-)
+from logeye import log, set_global_log_file, toggle_global_log_file
 
 print("\n--- Global file logging ---")
 

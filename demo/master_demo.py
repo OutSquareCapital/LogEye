@@ -1,4 +1,4 @@
-from logeye import *
+from logeye import log, l, set_path_mode, toggle_logs, reset_output_formatter, set_output_formatter
 
 log("\n\n=== BASIC MESSAGES ===")
 
