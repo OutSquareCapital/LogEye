@@ -335,3 +335,5 @@ MIT License © 2026
 
 See [LICENSE](LICENSE) for details.
 
+Version 1.0.0
+
