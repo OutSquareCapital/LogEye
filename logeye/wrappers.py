@@ -1,11 +1,15 @@
-from collections.abc import Mapping
+from collections.abc import ItemsView, Iterable, KeysView, Mapping, ValuesView
 
 from . import config
 from .emmiter import _emit
 from .introspection import _caller_frame, _get_location
+from typing import Generic, Self, TypeAlias, TypeVar
 
+T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
 
-def _path(obj):
+def _path(obj: object) -> str:
 	"""
 	Return a readable name/path for a callable or object
 	"""
@@ -16,7 +20,7 @@ def _path(obj):
 	return getattr(obj, "__name__", str(obj))
 
 
-def _unwrap_value(value):
+def _unwrap_value(value: object):
 	"""
 	Recursively unwrap logged containers into plain Python values.
 	Used for log payloads so mutation logs stay readable
@@ -49,7 +53,7 @@ def _unwrap_value(value):
 	return value
 
 
-def _emit_change(name, op, state=None, filename=None, lineno=None, **details):
+def _emit_change(name: str, op: str, state: object=None, filename: str | None=None, lineno: int | None=None, **details: str):
 	"""
 	Emit a mutation event with a readable payload
 	"""
@@ -57,7 +61,7 @@ def _emit_change(name, op, state=None, filename=None, lineno=None, **details):
 	if not config._ENABLED:
 		return
 
-	payload = {"op": op}
+	payload: dict[str, object] = {"op": op}
 
 	for key, value in details.items():
 		payload[key] = _unwrap_value(value)
@@ -67,8 +71,7 @@ def _emit_change(name, op, state=None, filename=None, lineno=None, **details):
 
 	_emit("change", name, payload, filename=filename, lineno=lineno)
 
-
-def _wrap_value(value, name=None):
+def _wrap_value(value: object, name: str | None=None):
 	"""
 	Recursively wrap values so nested structures are tracked
 
@@ -87,7 +90,8 @@ def _wrap_value(value, name=None):
 			(LoggedObject, LoggedList, LoggedDict, LoggedSet),
 	):
 		return value
-
+	# NOTE: potential bug? None by default will erase the default value of the logged objects.
+	# In any case this is a typing error.
 	if isinstance(value, Mapping):
 		return LoggedDict(value, name=name)
 
@@ -114,8 +118,12 @@ class LoggedObject:
 	- Tracks attribute and item changes
 	- Recursively wraps nested values
 	"""
+	_data: dict[str, object]
+	_log_name: str
 
-	def __init__(self, initial=None, name="set"):
+	def __init__(self, initial: object=None, name: str="set"):
+		# NOTE: why setattr? is there a specific reason? regular assignement
+		# is both faster and type safe.
 		object.__setattr__(self, "_data", {})
 		object.__setattr__(self, "_log_name", name)
 
@@ -132,7 +140,7 @@ class LoggedObject:
 		for key, value in items:
 			self._data[key] = _wrap_value(value, name=f"{self._log_name}.{key}")
 
-	def __getattr__(self, name):
+	def __getattr__(self, name: str) -> object:
 		data = object.__getattribute__(self, "_data")
 
 		if name in data:
@@ -140,7 +148,7 @@ class LoggedObject:
 
 		raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
 
-	def __setattr__(self, name, value):
+	def __setattr__(self, name: str, value: object) -> None:
 		if name.startswith("_"):
 			object.__setattr__(self, name, value)
 			return
@@ -162,10 +170,10 @@ class LoggedObject:
 		finally:
 			del frame
 
-	def __getitem__(self, key):
+	def __getitem__(self, key: str) -> object:
 		return self._data[key]
 
-	def __setitem__(self, key, value):
+	def __setitem__(self, key, value: object) -> None:
 		log_name = object.__getattribute__(self, "_log_name")
 		wrapped = _wrap_value(value, name=f"{log_name}.{key}")
 		self._data[key] = wrapped
@@ -181,7 +189,7 @@ class LoggedObject:
 		finally:
 			del frame
 
-	def __delattr__(self, name):
+	def __delattr__(self, name: str) -> None:
 		if name.startswith("_"):
 			raise AttributeError(name)
 
@@ -200,7 +208,7 @@ class LoggedObject:
 		finally:
 			del frame
 
-	def __delitem__(self, key):
+	def __delitem__(self, key: str) -> None:
 		log_name = object.__getattribute__(self, "_log_name")
 		del self._data[key]
 
@@ -214,22 +222,22 @@ class LoggedObject:
 	def __iter__(self):
 		return iter(self._data)
 
-	def __len__(self):
+	def __len__(self) -> int:
 		return len(self._data)
 
-	def __contains__(self, key):
+	def __contains__(self, key: str) -> bool:
 		return key in self._data
 
-	def get(self, key, default=None):
+	def get(self, key: str, default: T =None) -> object | T:
 		return self._data.get(key, default)
 
-	def keys(self):
+	def keys(self) -> KeysView[object]:
 		return self._data.keys()
 
-	def values(self):
+	def values(self) -> ValuesView[object]:
 		return self._data.values()
 
-	def items(self):
+	def items(self) -> ItemsView[str, object]:
 		return self._data.items()
 
 	def to_dict(self):
@@ -238,27 +246,28 @@ class LoggedObject:
 
 		return {k: unwrap(v) for k, v in self._data.items()}
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return repr(self.to_dict())  # f"{type(self).__name__}({self._data!r})"
 
-	def __dir__(self):
+	def __dir__(self) -> list[str]:
 		return sorted(set(super().__dir__()) | set(self._data.keys()))
 
 
-class LoggedList(list):
+class LoggedList(list[T], Generic[T]):
 	"""
 	List wrapper that logs mutations like append, sort, pop, extend, etc
 	"""
+	_log_name: str
 
-	def __init__(self, initial=None, name="set"):
+	def __init__(self, initial: Iterable[T] | None=None, name: str="set"):
 		object.__setattr__(self, "_log_name", name)
 		if initial is None:
-			initial = []
+			initial: list[T] = []
 
 		items = [_wrap_value(v, name=f"{name}[{i}]") for i, v in enumerate(initial)]
 		super().__init__(items)
 
-	def _emit(self, op, **details):
+	def _emit(self, op: str, **details: object) -> None:
 		frame = _caller_frame()
 		try:
 			filename, lineno = _get_location(frame)
@@ -266,7 +275,7 @@ class LoggedList(list):
 		finally:
 			del frame
 
-	def __setitem__(self, key, value):
+	def __setitem__(self, key: int | slice, value: T) -> None:
 		if isinstance(key, slice):
 			wrapped = [_wrap_value(v, name=f"{self._log_name}[{i}]") for i, v in enumerate(value)]
 			super().__setitem__(key, wrapped)
@@ -296,48 +305,48 @@ class LoggedList(list):
 		finally:
 			del frame
 
-	def __delitem__(self, key):
+	def __delitem__(self, key: int | slice) -> None:
 		super().__delitem__(key)
 		self._emit("delitem", key=key)
 
-	def append(self, value):
+	def append(self, value: T) -> None:
 		wrapped = _wrap_value(value, name=f"{self._log_name}[{len(self)}]")
 		super().append(wrapped)
 		self._emit("append", value=value)
 
-	def extend(self, iterable):
+	def extend(self, iterable: Iterable[T]) -> None:
 		items = list(iterable)
 		wrapped = [_wrap_value(v, name=f"{self._log_name}[{len(self) + i}]") for i, v in enumerate(items)]
 		super().extend(wrapped)
 		self._emit("extend", value=items)
 
-	def insert(self, index, value):
+	def insert(self, index: int, value: T) -> None:
 		wrapped = _wrap_value(value, name=f"{self._log_name}[{index}]")
 		super().insert(index, wrapped)
 		self._emit("insert", index=index, value=value)
 
-	def pop(self, index=-1):
+	def pop(self, index: int=-1) -> T:
 		value = super().pop(index)
 		self._emit("pop", index=index, value=value)
 		return value
 
-	def remove(self, value):
+	def remove(self, value: T) -> None:
 		super().remove(value)
 		self._emit("remove", value=value)
 
-	def clear(self):
+	def clear(self) -> None:
 		super().clear()
 		self._emit("clear")
 
-	def sort(self, *args, **kwargs):
+	def sort(self, *args, **kwargs) -> None:
 		super().sort(*args, **kwargs)
 		self._emit("sort", args=args, kwargs=kwargs)
 
-	def reverse(self):
+	def reverse(self) -> None:
 		super().reverse()
 		self._emit("reverse")
 
-	def __iadd__(self, other):
+	def __iadd__(self, other: Iterable[T]) -> Self:
 		self.extend(other)
 		return self
 
@@ -347,35 +356,36 @@ class LoggedList(list):
 		return self
 
 	def to_list(self):
+		# NOTE: very inefficient, will copy the list 2x each time, which is not needed just to get an Iterable
 		return [_unwrap_value(v) for v in list(self)]
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return repr(self.to_list())  # f"{type(self).__name__}({list(self)!r})"
 
 
-class LoggedDict(dict):
+class LoggedDict(dict[K, V], Generic[K, V]):
 	"""
 	Dict wrapper that logs mutations like setitem, update, pop, clear, etc
 	"""
 
-	def __init__(self, initial=None, name="set", **kwargs):
+	def __init__(self, initial: Mapping[K, V] | Iterable[tuple[K, V]]  | None = None, name: str = "set", **kwargs: object):
 		object.__setattr__(self, "_log_name", name)
 
 		if initial is None:
 			initial = {}
-
+		# NOTE: Inefficient, will copy the mapping even tough mapping does support items
+		# and in case of an Iterable, will copy it to the dict, to at the end re-copy it again.
 		if isinstance(initial, Mapping):
 			items = dict(initial).items()
 		else:
 			items = dict(initial).items()
-
 		items = list(items) + list(kwargs.items())
 
 		super().__init__()
 		for k, v in items:
 			dict.__setitem__(self, k, _wrap_value(v, name=f"{name}.{k}"))
 
-	def _emit(self, op, **details):
+	def _emit(self, op: str, **details) -> None:
 		frame = _caller_frame()
 		try:
 			filename, lineno = _get_location(frame)
@@ -383,7 +393,7 @@ class LoggedDict(dict):
 		finally:
 			del frame
 
-	def __setitem__(self, key, value):
+	def __setitem__(self, key: K, value: V) -> None:
 		wrapped = _wrap_value(value, name=f"{self._log_name}.{key}")
 		super().__setitem__(key, wrapped)
 		frame = _caller_frame()
@@ -407,30 +417,30 @@ class LoggedDict(dict):
 		finally:
 			del frame
 
-	def __delitem__(self, key):
+	def __delitem__(self, key: K) -> None:
 		super().__delitem__(key)
 		self._emit("delitem", key=key)
 
-	def __getattr__(self, name):
+	def __getattr__(self, name: K) -> V:
 		try:
 			return self[name]
 		except KeyError as e:
 			raise AttributeError(name) from e
 
-	def __setattr__(self, name, value):
+	def __setattr__(self, name: str, value: V) -> None:
 		if name.startswith("_"):
 			object.__setattr__(self, name, value)
 			return
 
 		self[name] = value
 
-	def __delattr__(self, name):
+	def __delattr__(self, name: str) -> None:
 		if name.startswith("_"):
 			raise AttributeError(name)
 
 		del self[name]
 
-	def update(self, *args, **kwargs):
+	def update(self, *args:  V, **kwargs: V) -> None:
 		data = dict(*args, **kwargs)
 		for k, v in data.items():
 			dict.__setitem__(self, k, _wrap_value(v, name=f"{self._log_name}.{k}"))
@@ -445,7 +455,7 @@ class LoggedDict(dict):
 		self._emit("setdefault", key=key, value=default)
 		return wrapped
 
-	def pop(self, key, default=...):
+	def pop(self, key, default=...) -> V:
 		if default is ...:
 			value = super().pop(key)
 			self._emit("pop", key=key, value=value)
@@ -455,12 +465,12 @@ class LoggedDict(dict):
 		self._emit("pop", key=key, value=value)
 		return value
 
-	def popitem(self):
+	def popitem(self) -> tuple[K, V]:
 		item = super().popitem()
 		self._emit("popitem", value=item)
 		return item
 
-	def clear(self):
+	def clear(self) -> None:
 		super().clear()
 		self._emit("clear")
 
@@ -471,12 +481,13 @@ class LoggedDict(dict):
 		return repr(self.to_dict())  # f"{type(self).__name__}({dict(self)!r})"
 
 
-class LoggedSet(set):
+class LoggedSet(set[T], Generic[T]):
 	"""
 	Set wrapper that logs mutations like add, remove, update, clear, etc
 	"""
+	_log_name: str
 
-	def __init__(self, initial=None, name="set"):
+	def __init__(self, initial: Iterable[T] | None=None, name: str="set") -> None:
 		object.__setattr__(self, "_log_name", name)
 
 		if initial is None:
@@ -485,7 +496,7 @@ class LoggedSet(set):
 		wrapped = {_wrap_value(v, name=f"{name}.item") for v in initial}
 		super().__init__(wrapped)
 
-	def _emit(self, op, **details):
+	def _emit(self, op: str, **details):
 		frame = _caller_frame()
 		try:
 			filename, lineno = _get_location(frame)
@@ -493,13 +504,14 @@ class LoggedSet(set):
 		finally:
 			del frame
 
-	def add(self, element):
+	def add(self, element: T) -> None:
 		wrapped = _wrap_value(element, name=f"{self._log_name}.item")
 		super().add(wrapped)
 		self._emit("add", value=element)
 
-	def update(self, *others):
+	def update(self, *others: Iterable[T]) -> None:
 		values = []
+		# NOTE: inefficient, extend can work with any Iterable.
 		for other in others:
 			values.extend(list(other))
 
@@ -507,50 +519,50 @@ class LoggedSet(set):
 		super().update(wrapped)
 		self._emit("update", value=values)
 
-	def discard(self, element):
+	def discard(self, element: T) -> None:
 		super().discard(element)
 		self._emit("discard", value=element)
 
-	def remove(self, element):
+	def remove(self, element: T) -> None:
 		super().remove(element)
 		self._emit("remove", value=element)
 
-	def pop(self):
+	def pop(self) -> T:
 		value = super().pop()
 		self._emit("pop", value=value)
 		return value
 
-	def clear(self):
+	def clear(self) -> None:
 		super().clear()
 		self._emit("clear")
 
-	def difference_update(self, *others):
+	def difference_update(self, *others: Iterable[T]) -> None:
 		super().difference_update(*others)
 		self._emit("difference_update", value=[list(o) for o in others])
 
-	def intersection_update(self, *others):
+	def intersection_update(self, *others: Iterable[T]) -> None:
 		super().intersection_update(*others)
 		self._emit("intersection_update", value=[list(o) for o in others])
 
-	def symmetric_difference_update(self, other):
+	def symmetric_difference_update(self, other: Iterable[T]) -> None:
 		super().symmetric_difference_update(other)
 		self._emit("symmetric_difference_update", value=list(other))
 
-	def __ior__(self, other):
+	def __ior__(self, other: Iterable[T]) -> Self:
 		self.update(other)
 		return self
 
-	def __iand__(self, other):
+	def __iand__(self, other: Iterable[T]) -> Self:
 		super().__iand__(other)
 		self._emit("iand", value=list(other))
 		return self
 
-	def __isub__(self, other):
+	def __isub__(self, other: Iterable[T]) -> Self:
 		super().__isub__(other)
 		self._emit("isub", value=list(other))
 		return self
 
-	def __ixor__(self, other):
+	def __ixor__(self, other: Iterable[T]) -> Self:
 		super().__ixor__(other)
 		self._emit("ixor", value=list(other))
 		return self
@@ -558,7 +570,7 @@ class LoggedSet(set):
 	def to_set(self):
 		return {_unwrap_value(v) for v in set(self)}
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return repr(self.to_set())  # f"{type(self).__name__}({set(self)!r})"
 
 
