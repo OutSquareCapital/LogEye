@@ -5,13 +5,13 @@ from .. import config
 from .frames import _caller_frame, _get_location
 
 
-def _expand_template(text):
+def _expand_template(text: str) -> str:
 	frame = _caller_frame()
 	try:
 		if frame is None:
 			return text
 
-		namespace = {}
+		namespace: dict[str, str] = {}
 		namespace.update(frame.f_globals)
 		namespace.update(frame.f_locals)
 
