@@ -89,6 +89,27 @@ python -m build
 echo "==> Uploading to PyPI"
 twine upload dist/*
 
+sleep_with_dots() {
+  local total=${1:-15}
+  local interval=2
+  local elapsed=0
+
+  while [ $elapsed -lt $total ]; do
+    for dots in "." ".." "..."; do
+      echo -ne "\rSleeping$dots "
+      sleep 1
+      ((elapsed++))
+      if [ $elapsed -ge $total ]; then
+        break
+      fi
+    done
+  done
+
+  echo -e "\rDone waiting."
+}
+
+sleep_with_dots 15
+
 echo "==> Updating git index"
 git add .
 
