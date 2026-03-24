@@ -10,7 +10,7 @@ class _LogPipe:
 	Allows logging values inline without calling `log(...)` explicitly
 	"""
 
-	def __call__(self, value, *args, **kwargs):
+	def __call__(self, value: object, *args: object, **kwargs: object) -> object:
 		"""
 		Allow `l(value)` to behave exactly like `log(value)`
 		This makes the pipe object usable as a normal function as well
@@ -18,7 +18,7 @@ class _LogPipe:
 
 		return log(value, *args, **kwargs)
 
-	def __ror__(self, other):
+	def __ror__(self, other: object):
 		"""
 		Right-hand pipe operator: `value | l`
 
