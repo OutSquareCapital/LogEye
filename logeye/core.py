@@ -1,9 +1,11 @@
 from __future__ import annotations
+from types import FrameType
+from logeye.wrappers import LoggedObject
 import sys
 import inspect
 import functools
 from collections.abc import Callable, Iterable, Mapping
-from typing import TYPE_CHECKING, Literal, Protocol
+from typing import TYPE_CHECKING, Literal,  TypeVar, ParamSpec,  overload
 
 from . import config
 from .emmiter import _emit
@@ -25,6 +27,10 @@ from .introspection.frames import _caller_frame, _get_location
 if TYPE_CHECKING:
 	from .config import Mode
 _NO_VALUE = object()
+T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
+P = ParamSpec("P")
 
 Level = Literal["call", "state", "full"]
 Kind = Literal["change", "message", "set", "call", "return"]
@@ -133,7 +139,7 @@ def _log_class(
 # WATCH (value logging)
 # =====================
 
-def watch(value: object, name: str | None=None, *, show_time: bool=True, show_file: bool=True, show_lineno: bool=True):
+def watch(value: T, name: str | None=None, *, show_time: bool=True, show_file: bool=True, show_lineno: bool=True) -> T:
 	"""
 	Log without changing behaviour
 	"""
@@ -192,7 +198,7 @@ def watch(value: object, name: str | None=None, *, show_time: bool=True, show_fi
 # ========================
 
 def _log_function(
-		func: Callable[..., object],
+		func: Callable[P, T],
 		*,
 		filepath: str | None=None,
 		level: Level="full",
@@ -201,7 +207,7 @@ def _log_function(
 		show_time: bool=True,
 		show_file: bool=True,
 		show_lineno: bool=True
-):
+) -> Callable[P, T]:
 	"""
 	Wrap a function to trace:
 	- calls (arguments)
@@ -297,7 +303,7 @@ def _log_function(
 		last_values = {}
 
 		try:
-			def tracer(frame, event, arg):
+			def tracer(frame: FrameType, event: str, arg: object):
 				code = frame.f_code
 
 				if not (
@@ -421,13 +427,13 @@ def _log_function(
 # ========================
 
 def _log_object(
-		obj: object,
+		obj: T | Mapping[K, V],
 		name: str | None=None,
 		*,
 		show_time: bool=True,
 		show_file: bool=True,
 		show_lineno: bool=True
-):
+) 	 -> T | LoggedObject[T | Mapping[K, V]] | Mapping[K, V]:
 	if not config._ENABLED or config._DECORATORS_ONLY:
 		return obj
 
@@ -473,7 +479,7 @@ def _log_message(
 		show_file: bool=True,
 		show_lineno: bool=True,
 		**kwargs: object
-):
+) -> str:
 	frame = _caller_frame()
 
 	try:
@@ -521,8 +527,36 @@ def _log_message(
 #   PUBLIC ENTRYPOINT
 # =====================
 
+@overload
 def log(
-		obj: object=_NO_VALUE,
+		obj: Mapping[K, V],
+		*args: object,
+		file: str | None=...,
+		filepath: str | None=...,
+		level: Level=...,
+		filter: Iterable[str] | None=...,
+		mode: Mode | None=...,
+		show_time: bool | None=...,
+		show_file: bool | None=...,
+		show_lineno: bool | None=...,
+		**kwargs: object
+) -> Mapping[K, V]: ...
+@overload
+def log(
+		obj: Callable[P, T],
+		*args: object,
+		file: str | None=...,
+		filepath: str | None=...,
+		level: Level=...,
+		filter: Iterable[str] | None=...,
+		mode: Mode | None=...,
+		show_time: bool | None=...,
+		show_file: bool | None=...,
+		show_lineno: bool | None=...,
+		**kwargs: object
+) -> Callable[P, T]: ...
+def log(
+		obj: Callable[P, T] | Mapping[K, V] | object=_NO_VALUE,
 		*args: object,
 		file: str | None=None,
 		filepath: str | None=None,
@@ -533,7 +567,7 @@ def log(
 		show_file: bool | None=None,
 		show_lineno: bool | None=None,
 		**kwargs: object
-):
+) -> object:
 	"""
 	Dispatches behaviour based on input type:
 
@@ -562,7 +596,7 @@ def log(
 		show_lineno = config._SHOW_LINENO
 
 	if obj is _NO_VALUE:
-		def decorator(target):
+		def decorator(target: T):
 			if inspect.isclass(target):
 				return _log_class(
 					target,

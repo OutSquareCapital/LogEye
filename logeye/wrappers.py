@@ -1,15 +1,21 @@
 from __future__ import annotations
-from collections.abc import ItemsView, Iterable, KeysView, Mapping, ValuesView
+from collections.abc import Callable, ItemsView, Iterable, KeysView, Mapping, ValuesView, Iterator
 
 from . import config
 from .emmiter import _emit
 from .introspection import _caller_frame, _get_location
-from typing import Generic,  TypeVar
+from typing import Generic, ParamSpec, SupportsIndex,  TypeVar, overload
+
+
+
+class _BaseLogged:
+	_log_name: str
 
 T = TypeVar("T")
 K = TypeVar("K")
 V = TypeVar("V")
-
+P = ParamSpec("P")
+L = TypeVar("L", bound=_BaseLogged)
 def _path(obj: object) -> str:
 	"""
 	Return a readable name/path for a callable or object
@@ -19,8 +25,16 @@ def _path(obj: object) -> str:
 		return obj.__qualname__.replace(".<locals>.", ".")
 
 	return getattr(obj, "__name__", str(obj))
-
-
+@overload
+def _unwrap_value(value: LoggedObject[T]) -> dict[str, object]: ...
+@overload
+def _unwrap_value(value: LoggedList[T]) -> list[T]: ...
+@overload
+def _unwrap_value(value: LoggedDict[K, V] | dict[K, V]) -> dict[K, V]: ...
+@overload
+def _unwrap_value(value: LoggedSet[T] | set[T]) -> set[T]: ...
+@overload
+def _unwrap_value(value: tuple[T, ...]) -> tuple[T, ...]: ...
 def _unwrap_value(value: object):
 	"""
 	Recursively unwrap logged containers into plain Python values.
@@ -72,7 +86,21 @@ def _emit_change(name: str, op: str, state: object=None, filename: str | None=No
 
 	_emit("change", name, payload, filename=filename, lineno=lineno)
 
-def _wrap_value(value: object, name: str | None=None):
+
+@overload
+def _wrap_value(value: Callable[P, T], name: str | None=None) -> Callable[P, T]:...
+@overload
+def _wrap_value(value: list[T], name: str | None=...) -> LoggedList[T]: ...
+@overload
+def _wrap_value(value: Mapping[K, V], name: str | None=...) -> LoggedDict[K, V]: ...
+@overload
+def _wrap_value(value: set[T], name: str | None=...) -> LoggedSet[T]: ...
+@overload
+def _wrap_value(value: L, name: str | None=...) -> L: ...
+@overload
+def _wrap_value(value: T, name: str | None=...) -> T: ...
+
+def _wrap_value(value: object, name: str | None=None) -> object:
 	"""
 	Recursively wrap values so nested structures are tracked
 
@@ -86,10 +114,7 @@ def _wrap_value(value: object, name: str | None=None):
 	if callable(value):
 		return value
 
-	if isinstance(
-			value,
-			(LoggedObject, LoggedList, LoggedDict, LoggedSet),
-	):
+	if isinstance(value, _BaseLogged):
 		return value
 	# NOTE: potential bug? None by default will erase the default value of the logged objects.
 	# In any case this is a typing error.
@@ -98,7 +123,7 @@ def _wrap_value(value: object, name: str | None=None):
 
 	if isinstance(value, list):
 		return LoggedList(value, name=name)
-
+	# Note: unecessary check, dict is a mapping
 	if isinstance(value, dict):
 		return LoggedDict(value, name=name)
 
@@ -110,8 +135,7 @@ def _wrap_value(value: object, name: str | None=None):
 
 	return value
 
-
-class LoggedObject:
+class LoggedObject(_BaseLogged, Generic[T]):
 	"""
 	A wrapper around mappings / objects that logs all mutations
 
@@ -120,9 +144,8 @@ class LoggedObject:
 	- Recursively wraps nested values
 	"""
 	_data: dict[str, object]
-	_log_name: str
 
-	def __init__(self, initial: object=None, name: str="set"):
+	def __init__(self, initial: T=None, name: str="set") -> None:
 		# NOTE: why setattr? is there a specific reason? regular assignement
 		# is both faster and type safe.
 		object.__setattr__(self, "_data", {})
@@ -220,7 +243,7 @@ class LoggedObject:
 		finally:
 			del frame
 
-	def __iter__(self):
+	def __iter__(self) -> Iterator[str]:
 		return iter(self._data)
 
 	def __len__(self) -> int:
@@ -241,7 +264,7 @@ class LoggedObject:
 	def items(self) -> ItemsView[str, object]:
 		return self._data.items()
 
-	def to_dict(self):
+	def to_dict(self)  -> dict[str, object]:
 		def unwrap(v):
 			return _unwrap_value(v)
 
@@ -254,11 +277,10 @@ class LoggedObject:
 		return sorted(set(super().__dir__()) | set(self._data.keys()))
 
 
-class LoggedList(list[T], Generic[T]):
+class LoggedList(list[T], _BaseLogged, Generic[T]):
 	"""
 	List wrapper that logs mutations like append, sort, pop, extend, etc
 	"""
-	_log_name: str
 
 	def __init__(self, initial: Iterable[T] | None=None, name: str="set"):
 		object.__setattr__(self, "_log_name", name)
@@ -325,8 +347,8 @@ class LoggedList(list[T], Generic[T]):
 		wrapped = _wrap_value(value, name=f"{self._log_name}[{index}]")
 		super().insert(index, wrapped)
 		self._emit("insert", index=index, value=value)
-
-	def pop(self, index: int=-1) -> T:
+	
+	def pop(self, index: SupportsIndex=-1) -> T:
 		value = super().pop(index)
 		self._emit("pop", index=index, value=value)
 		return value
@@ -364,7 +386,7 @@ class LoggedList(list[T], Generic[T]):
 		return repr(self.to_list())  # f"{type(self).__name__}({list(self)!r})"
 
 
-class LoggedDict(dict[K, V], Generic[K, V]):
+class LoggedDict(dict[K, V], _BaseLogged, Generic[K, V]):
 	"""
 	Dict wrapper that logs mutations like setitem, update, pop, clear, etc
 	"""
@@ -447,7 +469,7 @@ class LoggedDict(dict[K, V], Generic[K, V]):
 			dict.__setitem__(self, k, _wrap_value(v, name=f"{self._log_name}.{k}"))
 		self._emit("update", value=data)
 
-	def setdefault(self, key, default=None):
+	def setdefault(self, key: K, default: V = None) -> V:
 		if key in self:
 			return self[key]
 
@@ -456,7 +478,7 @@ class LoggedDict(dict[K, V], Generic[K, V]):
 		self._emit("setdefault", key=key, value=default)
 		return wrapped
 
-	def pop(self, key, default=...) -> V:
+	def pop(self, key: K, default: V = ...) -> V:
 		if default is ...:
 			value = super().pop(key)
 			self._emit("pop", key=key, value=value)
@@ -482,11 +504,10 @@ class LoggedDict(dict[K, V], Generic[K, V]):
 		return repr(self.to_dict())  # f"{type(self).__name__}({dict(self)!r})"
 
 
-class LoggedSet(set[T], Generic[T]):
+class LoggedSet(set[T], _BaseLogged, Generic[T]):
 	"""
 	Set wrapper that logs mutations like add, remove, update, clear, etc
 	"""
-	_log_name: str
 
 	def __init__(self, initial: Iterable[T] | None=None, name: str="set") -> None:
 		object.__setattr__(self, "_log_name", name)
