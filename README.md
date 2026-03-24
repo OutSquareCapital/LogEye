@@ -1,10 +1,11 @@
-![PyPI](https://img.shields.io/pypi/v/logeye?cachebust=1774326290)
+![PyPI](https://img.shields.io/pypi/v/logeye?cachebust=1774332497)
 ![Python](https://img.shields.io/pypi/pyversions/logeye)
 ![License](https://img.shields.io/github/license/MattFor/LogEye)
 
 # LogEye
 
 Understand exactly what your code is doing in real time, no debugger needed.  
+
 LogEye is a frictionless runtime logger for Python that shows variable changes, function calls, and data mutations as
 they happen.
 
@@ -150,8 +151,7 @@ Instead of raw internal logs, it shows:
 Enable it with:
 
 ```python
-from logeye import log
-from logeye.config import set_mode
+from logeye import log, set_mode
 
 # Globally
 set_mode("edu")
@@ -696,5 +696,5 @@ MIT License © 2026
 
 See [LICENSE](LICENSE) for details.
 
-Version 1.3.1
+Version 1.3.2
 

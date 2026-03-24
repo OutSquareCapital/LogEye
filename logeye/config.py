@@ -70,6 +70,16 @@ def toggle_message_metadata(enabled: bool):
 #  SETTERS
 # =========
 
+def set_mode(mode: str):
+	"""
+	Set global logging mode
+	full or  edu / educational
+	"""
+
+	global _LOG_MODE
+	_LOG_MODE = _normalize_mode(mode)
+
+
 def set_global_log_file(filepath):
 	"""
 	Route LogEye output to this file globally.

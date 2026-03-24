@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.2] - 2026-03-24
+
+### Added
+- set_mode() for setting the mode globally (f.e to education)
+- More tests for the global mode setting
+
+### Improved
+- README examples
+
 ## [1.3.1] - 2026-03-24
 
 ### Added
