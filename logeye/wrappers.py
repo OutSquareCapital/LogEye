@@ -1,9 +1,10 @@
+from __future__ import annotations
 from collections.abc import ItemsView, Iterable, KeysView, Mapping, ValuesView
 
 from . import config
 from .emmiter import _emit
 from .introspection import _caller_frame, _get_location
-from typing import Generic, Self, TypeAlias, TypeVar
+from typing import Generic,  TypeVar
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -346,7 +347,7 @@ class LoggedList(list[T], Generic[T]):
 		super().reverse()
 		self._emit("reverse")
 
-	def __iadd__(self, other: Iterable[T]) -> Self:
+	def __iadd__(self, other: Iterable[T]) -> LoggedList[T]:
 		self.extend(other)
 		return self
 
@@ -548,21 +549,21 @@ class LoggedSet(set[T], Generic[T]):
 		super().symmetric_difference_update(other)
 		self._emit("symmetric_difference_update", value=list(other))
 
-	def __ior__(self, other: Iterable[T]) -> Self:
+	def __ior__(self, other: Iterable[T]) -> LoggedSet[T]:
 		self.update(other)
 		return self
 
-	def __iand__(self, other: Iterable[T]) -> Self:
+	def __iand__(self, other: Iterable[T]) -> LoggedSet[T]:
 		super().__iand__(other)
 		self._emit("iand", value=list(other))
 		return self
 
-	def __isub__(self, other: Iterable[T]) -> Self:
+	def __isub__(self, other: Iterable[T]) -> LoggedSet[T]:
 		super().__isub__(other)
 		self._emit("isub", value=list(other))
 		return self
 
-	def __ixor__(self, other: Iterable[T]) -> Self:
+	def __ixor__(self, other: Iterable[T]) -> LoggedSet[T]:
 		super().__ixor__(other)
 		self._emit("ixor", value=list(other))
 		return self

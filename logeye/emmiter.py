@@ -1,12 +1,15 @@
+from __future__ import annotations
 import os
 import time
+from typing import TYPE_CHECKING
 
 from . import config
 from .formatting import _formatter
 from .introspection import _is_user_code
+if TYPE_CHECKING:
+	from .core import Kind
 
-
-def _write_line_to_file(filepath, line):
+def _write_line_to_file(filepath: str, line: str) -> None:
 	directory = os.path.dirname(filepath)
 	if directory:
 		os.makedirs(directory, exist_ok=True)
@@ -15,7 +18,7 @@ def _write_line_to_file(filepath, line):
 		f.write(line + "\n")
 
 
-def _emit(kind, name, value, *, filename=None, lineno=None, filepath=None, show_time=True, show_file=True, show_lineno=True):
+def _emit(kind: Kind, name: str, value: object, *, filename: str | None=None, lineno: int | None=None, filepath: str | None=None, show_time: bool=True, show_file: bool=True, show_lineno: bool=True) -> None:
 	if config._START_TIME is None:
 		config._START_TIME = time.perf_counter()
 

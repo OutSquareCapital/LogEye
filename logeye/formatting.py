@@ -1,14 +1,17 @@
+from __future__ import annotations
 from collections.abc import Callable
 import os
 from string import Template
+from typing import TYPE_CHECKING
 
 from . import config
 from .introspection.frames import _caller_frame, _get_location
-
+if TYPE_CHECKING:
+	from .core import Kind
 
 def _default_formatter(
 		elapsed: float,
-		kind: str,
+		kind: Kind,
 		name: str,
 		value: object,
 		filename: str | None,

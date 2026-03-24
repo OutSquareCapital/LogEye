@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 import inspect
 import functools
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 _NO_VALUE = object()
 
 Level = Literal["call", "state", "full"]
-
+Kind = Literal["change", "message", "set", "call", "return"]
 def _resolve_filepath(file: str |None =None, filepath: str | None=None) -> str | None:
 	if file is not None and filepath is not None:
 		raise TypeError("Use only one of 'file' or 'filepath'")
@@ -236,7 +237,7 @@ def _log_function(
 		call_id = call_counter
 		call_name = f"{func_path}{'' if call_counter == 1 else f'_{call_id}'}"
 
-		def _should_emit(kind, name: str) -> bool:
+		def _should_emit(kind: Kind, name: str) -> bool:
 			if mode == "educational":
 				var = name.split(".")[-1]
 

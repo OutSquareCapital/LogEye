@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Literal
+from typing import Literal, TypeAlias
 
 _ENABLED = True
 _START_TIME = None
@@ -27,9 +27,9 @@ _LOG_PIPE_NAME = "l"
 
 _GLOBAL_LOG_FILE = None
 _GLOBAL_LOG_FILE_ENABLED = True
-type PathMode = Literal["absolute", "project", "file"]
+PathMode: TypeAlias = Literal["absolute", "project", "file"]
 
-type Mode = Literal["edu", "educational", "full"]
+Mode: TypeAlias = Literal["edu", "educational", "full"]
 
 # =========
 #  TOGGLES
