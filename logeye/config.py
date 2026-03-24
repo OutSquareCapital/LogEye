@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Literal, TypeAlias
 
 _ENABLED = True
 _START_TIME = None
@@ -26,23 +27,25 @@ _LOG_PIPE_NAME = "l"
 
 _GLOBAL_LOG_FILE = None
 _GLOBAL_LOG_FILE_ENABLED = True
+PathMode: TypeAlias = Literal["absolute", "project", "file"]
 
+Mode: TypeAlias = Literal["edu", "educational", "full"]
 
 # =========
 #  TOGGLES
 # =========
 
-def toggle_logs(enabled: bool):
+def toggle_logs(enabled: bool) -> None:
 	global _ENABLED
 	_ENABLED = enabled
 
 
-def toggle_global_log_file(enabled: bool):
+def toggle_global_log_file(enabled: bool) -> None:
 	global _GLOBAL_LOG_FILE_ENABLED
 	_GLOBAL_LOG_FILE_ENABLED = enabled
 
 
-def toggle_decorator_log_only(enabled: bool):
+def toggle_decorator_log_only(enabled: bool) -> None:
 	"""
 	Toggle only @log-decorated tracing.
 	"""
@@ -51,7 +54,7 @@ def toggle_decorator_log_only(enabled: bool):
 	_DECORATORS_ONLY = enabled
 
 
-def toggle_message_metadata(enabled: bool):
+def toggle_message_metadata(enabled: bool) -> None:
 	"""
 	Enable or disable metadata for message logs
 
@@ -69,8 +72,7 @@ def toggle_message_metadata(enabled: bool):
 # =========
 #  SETTERS
 # =========
-
-def set_mode(mode: str):
+def set_mode(mode: Mode) -> None:
 	"""
 	Set global logging mode
 	full or  edu / educational
@@ -80,7 +82,7 @@ def set_mode(mode: str):
 	_LOG_MODE = _normalize_mode(mode)
 
 
-def set_global_log_file(filepath):
+def set_global_log_file(filepath: str | None) -> None:
 	"""
 	Route LogEye output to this file globally.
 	"""
@@ -88,24 +90,14 @@ def set_global_log_file(filepath):
 	_GLOBAL_LOG_FILE = None if filepath is None else os.fspath(filepath)
 
 
-def set_path_mode(mode: str):
+def set_path_mode(mode: PathMode) -> None:
 	global _PATH_MODE
-
-	if mode not in ("absolute", "project", "file"):
-		raise ValueError("mode must be: absolute, project, file")
 
 	_PATH_MODE = mode
 
-
-# =========
-#   OTHER
-# =========
-
-def _normalize_mode(mode: str) -> str:
+def _normalize_mode(mode: Mode) -> Mode:
 	if mode in ("edu", "educational"):
 		return "educational"
 
 	if mode == "full":
 		return "full"
-
-	raise ValueError("mode must be: full, edu, educational")

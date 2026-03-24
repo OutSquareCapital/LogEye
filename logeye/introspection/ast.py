@@ -1,16 +1,17 @@
 import os
 import ast
 import linecache
+from types import FrameType
 
 from .. import config
 from .frames import _caller_frame
 
 # Tracks how many log() calls happened on a single line
 # Used to map tuples a, b = log(...), log(...)
-_call_counter_per_line = {}
+_call_counter_per_line: dict[tuple[str, int], int] = {}
 
 
-def _is_user_code(filename):
+def _is_user_code(filename: str) -> bool:
 	"""
 	Filter out internal library frames
 
@@ -24,7 +25,7 @@ def _is_user_code(filename):
 	return "/logeye/" not in filename
 
 
-def _is_direct_log_call(node):
+def _is_direct_log_call(node: ast.AST) -> bool:
 	"""
 	Check if an AST node is a direct call to `log(...)` or pipe `l`
 	"""
@@ -36,7 +37,7 @@ def _is_direct_log_call(node):
 	)
 
 
-def _is_assigned_call(frame):
+def _is_assigned_call(frame: FrameType | None) -> bool:
 	"""
 	Detect whether the current line contains an assignment
 	where log(...) is used
@@ -73,7 +74,7 @@ def _is_assigned_call(frame):
 	return False
 
 
-def _get_call_index_in_line(frame):
+def _get_call_index_in_line(frame: FrameType):
 	"""
 	Track which log() call this is on the current line
 
@@ -92,7 +93,7 @@ def _get_call_index_in_line(frame):
 	return idx
 
 
-def _infer_name_from_frame(frame, default="set"):
+def _infer_name_from_frame(frame: FrameType | None, default: str="set") -> str:
 	"""
 	Infer variable name from a simple single-line assignment
 
@@ -134,7 +135,7 @@ def _infer_name_from_frame(frame, default="set"):
 	return default
 
 
-def _infer_callsite_name(default="set"):
+def _infer_callsite_name(default: str="set") -> str:
 	frame = _caller_frame()
 	try:
 		return _infer_name_from_frame(frame, default)
@@ -142,7 +143,7 @@ def _infer_callsite_name(default="set"):
 		del frame
 
 
-def _get_assignment_target_for_call(frame):
+def _get_assignment_target_for_call(frame: FrameType | None) -> str | None:
 	"""
 	Main name inference location
 
@@ -233,7 +234,7 @@ def _get_assignment_target_for_call(frame):
 	return None
 
 
-def _get_assignment_target_for_pipe(frame):
+def _get_assignment_target_for_pipe(frame: FrameType | None) -> str | None:
 	if frame is None:
 		return None
 

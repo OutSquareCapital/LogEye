@@ -1,17 +1,20 @@
+from types import FrameType
+
+
 import os
 import inspect
 
 from .. import config
 
 
-def _get_location(frame):
+def _get_location(frame: FrameType | None) -> tuple[str | None, int | None]:
 	if frame is None:
 		return None, None
 
 	return frame.f_code.co_filename, frame.f_lineno
 
 
-def _caller_frame():
+def _caller_frame() -> FrameType | None:
 	frame = inspect.currentframe()
 
 	try:

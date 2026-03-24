@@ -1,21 +1,25 @@
+from __future__ import annotations
+from collections.abc import Callable
 import os
 from string import Template
+from typing import TYPE_CHECKING
 
 from . import config
 from .introspection.frames import _caller_frame, _get_location
-
+if TYPE_CHECKING:
+	from .core import Kind
 
 def _default_formatter(
-		elapsed,
-		kind,
-		name,
-		value,
-		filename,
-		lineno,
+		elapsed: float,
+		kind: Kind,
+		name: str,
+		value: object,
+		filename: str | None,
+		lineno: int | None,
 		*,
-		show_time=True,
-		show_file=True,
-		show_lineno=True,
+		show_time: bool=True,
+		show_file: bool=True,
+		show_lineno: bool=True,
 ):
 	parts = []
 
@@ -122,7 +126,7 @@ def _default_formatter(
 _formatter = _default_formatter
 
 
-def _format_path(filename):
+def _format_path(filename: str | None) -> str:
 	if not filename:
 		return ""
 
@@ -141,17 +145,17 @@ def _format_path(filename):
 	return filename
 
 
-def set_output_formatter(func):
+def set_output_formatter(func: Callable[..., object]) -> None:
 	global _formatter
 	_formatter = func
 
 
-def reset_output_formatter():
+def reset_output_formatter() -> None:
 	global _formatter
 	_formatter = _default_formatter
 
 
-def _format_message(text, *args, **kwargs):
+def _format_message(text: str, *args: object, **kwargs: object) -> str:
 	try:
 		return text.format(*args, **kwargs)
 	except Exception:
