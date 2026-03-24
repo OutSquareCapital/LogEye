@@ -8,9 +8,15 @@ Understand exactly what your code is doing in real time, no debugger needed.
 LogEye is a frictionless runtime logger for Python that shows variable changes, function calls, and data mutations as
 they happen.
 
-##### Think of it as "print debugging" just better - automated, structured, easy to drop into, and remove from any codebase
+**Think of it as "print debugging" just better - automated, structured, easy to drop into, and remove from any codebase**
 
-### Quick example
+## Installation
+
+```bash
+pip install logeye
+```
+
+## Quick example
 ```python
 from logeye import log
 
@@ -42,7 +48,6 @@ Output:
 
 # Table of Contents
 
-- [Installation](#installation)
 - [Who is it for](#who-is-it-for)
 - [What does it do](#what-does-it-do)
 - [Quick start](#quick-start)
@@ -61,12 +66,6 @@ Output:
 - [Limitations](#limitations)
 - [Contact](#contact)
 - [License](#license)
-
-## Installation
-
-```bash
-pip install logeye
-```
 
 ## Who is it for
 
