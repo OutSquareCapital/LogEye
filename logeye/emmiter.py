@@ -15,7 +15,7 @@ def _write_line_to_file(filepath, line):
 		f.write(line + "\n")
 
 
-def _emit(kind, name, value, *, filename=None, lineno=None, filepath=None):
+def _emit(kind, name, value, *, filename=None, lineno=None, filepath=None, show_time=True, show_file=True, show_lineno=True):
 	if config._START_TIME is None:
 		config._START_TIME = time.perf_counter()
 
@@ -25,8 +25,31 @@ def _emit(kind, name, value, *, filename=None, lineno=None, filepath=None):
 	if filename and not _is_user_code(filename):
 		return
 
+	if config._LOG_MODE == "educational":
+		if kind == "change" and isinstance(value, dict):
+			if value.get("op") == "extend" and not value.get("value"):
+				return
+
+	if config._LOG_MODE == "educational":
+		filename = None
+		lineno = None
+
 	elapsed = time.perf_counter() - config._START_TIME
-	line = _formatter(elapsed, kind, name, value, filename, lineno)
+	line = _formatter(
+		elapsed,
+		kind,
+		name,
+		value,
+		filename,
+		lineno,
+		show_time=show_time,
+		show_file=show_file,
+		show_lineno=show_lineno,
+	)
+
+	# Educational mode is on, ignoring stuff
+	if not line:
+		return
 
 	if filepath is not None:
 		_write_line_to_file(filepath, line)

@@ -4,7 +4,7 @@ from .pipe import l
 from .core import log, watch
 from .formatting import set_output_formatter, reset_output_formatter
 from .config import toggle_logs, toggle_decorator_log_only, toggle_message_metadata, toggle_global_log_file, \
-	set_path_mode, set_global_log_file
+	set_path_mode, set_global_log_file, _normalize_mode
 
 w = watch
 

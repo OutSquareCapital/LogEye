@@ -80,8 +80,8 @@ def _get_call_index_in_line(frame):
 	Example:
 		a, b = log("x"), log("y")
 
-	First call → index 0 → maps to 'a'
-	Second call → index 1 → maps to 'b'
+	First call -> index 0 -> maps to 'a'
+	Second call ->  index 1 -> maps to 'b'
 	"""
 
 	key = (frame.f_code.co_filename, frame.f_lineno)

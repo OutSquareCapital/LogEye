@@ -5,21 +5,112 @@ from . import config
 from .introspection.frames import _caller_frame, _get_location
 
 
-def _default_formatter(elapsed, kind, name, value, filename, lineno):
-	stamp = f"{elapsed:0.3f}s"
+def _default_formatter(
+		elapsed,
+		kind,
+		name,
+		value,
+		filename,
+		lineno,
+		*,
+		show_time=True,
+		show_file=True,
+		show_lineno=True,
+):
+	parts = []
 
-	loc = ""
-	if filename and lineno:
+	if config._LOG_MODE == "educational":
+		show_file = False
+		show_lineno = False
+
+	stamp = f"{elapsed:0.3f}s"
+	time_prefix = f"[{stamp}] " if show_time else ""
+
+	if show_file and filename:
 		path = _format_path(filename)
-		loc = f"{path}:{lineno} "
+		loc = path
+		if show_lineno and lineno:
+			loc += f":{lineno}"
+		parts.append(loc)
+
+	location_prefix = " ".join(parts)
+	if location_prefix:
+		location_prefix += " "
+
+	prefix = f"{time_prefix}{location_prefix}"
+
+	if config._LOG_MODE == "educational":
+		if isinstance(value, dict) and "op" in value:
+			op = value["op"]
+			val = value.get("value")
+			state = value.get("state")
+
+			short_name = name.split(".")[-1]
+
+			if op == "append":
+				return f"{prefix}Added {val} to the end of {short_name} -> {state}"
+
+			if op == "extend":
+				if not val:
+					return None
+
+				if len(val) == 1:
+					return f"{prefix}Added {val[0]} to {short_name} -> {state}"
+
+				return f"{prefix}Added {val} to {short_name} -> {state}"
+
+			if op == "setitem":
+				return f"{prefix}set {short_name} = {val} -> {state}"
+
+			return f"{prefix}{short_name} changed -> {state}"
+
+		if kind == "set":
+			parts = name.split(".")
+
+			if len(parts) > 1:
+				parts = parts[1:]
+
+			short_name = ".".join(parts[-2:]) if len(parts) >= 2 else parts[0]
+
+			return f"{prefix}{short_name} = {value!r}"
+
+		if kind == "call":
+			parts = name.split(".")
+
+			# Drop module part if present (first element)
+			if len(parts) > 1:
+				parts = parts[1:]
+
+			func_name = ".".join(parts[-2:]) if len(parts) >= 2 else parts[0]
+
+			if isinstance(value, dict):
+				args = value.get("args", ())
+				kwargs = value.get("kwargs", {})
+
+				arg_parts = []
+
+				if args:
+					arg_parts.append(", ".join(repr(a) for a in args))
+
+				if kwargs:
+					arg_parts.append(", ".join(f"{k}={v!r}" for k, v in kwargs.items()))
+
+				args_str = ", ".join(arg_parts)
+
+				return f"{prefix}Calling {func_name}({args_str})"
+
+			return f"{prefix}Calling {func_name}"
+
+		if kind == "return":
+			return f"{prefix}Returned {value!r}"
 
 	if kind == "message":
 		if not config._SHOW_MESSAGE_META:
 			return f"{value}"
 
-		return f"[{stamp}] {loc}{value}"
+		return f"{prefix}{value}"
 
-	return f"[{stamp}] {loc}({kind}) {name} = {value!r}"
+	return f"{prefix}({kind}) {name} = {value!r}"
 
 
 _formatter = _default_formatter

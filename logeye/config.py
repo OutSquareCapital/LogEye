@@ -12,6 +12,11 @@ _PATH_MODE = "file"
 # Whether message logs include timestamp + file info
 _SHOW_MESSAGE_META = True
 _DECORATORS_ONLY = False
+_LOG_MODE = "full"  # "full" | "educational"
+
+_SHOW_TIME = True
+_SHOW_FILE = True
+_SHOW_LINENO = True
 
 _PROJECT_ROOT = os.getcwd()
 _LIBRARY_ROOT = os.path.dirname(__file__)
@@ -80,3 +85,17 @@ def set_path_mode(mode: str):
 		raise ValueError("mode must be: absolute, project, file")
 
 	_PATH_MODE = mode
+
+
+# =========
+#   OTHER
+# =========
+
+def _normalize_mode(mode: str) -> str:
+	if mode in ("edu", "educational"):
+		return "educational"
+
+	if mode == "full":
+		return "full"
+
+	raise ValueError("mode must be: full, edu, educational")
