@@ -1,29 +1,32 @@
 from __future__ import annotations
-from collections.abc import Callable
+
 import os
+
 from string import Template
 from typing import TYPE_CHECKING
-
 from . import config
+from collections.abc import Callable
 from .introspection.frames import _caller_frame, _get_location
+
 if TYPE_CHECKING:
 	from .core import Kind
 
+
 def _default_formatter(
-		elapsed: float,
-		kind: Kind,
-		name: str,
-		value: object,
-		filename: str | None,
-		lineno: int | None,
-		*,
-		show_time: bool=True,
-		show_file: bool=True,
-		show_lineno: bool=True,
+	elapsed: float,
+	kind: Kind,
+	name: str,
+	value: object,
+	filename: str | None,
+	lineno: int | None,
+	*,
+	show_time: bool = True,
+	show_file: bool = True,
+	show_lineno: bool = True,
 ):
 	parts = []
 
-	if config._LOG_MODE == "educational":
+	if config._g_log_mode == "educational":
 		show_file = False
 		show_lineno = False
 
@@ -43,7 +46,7 @@ def _default_formatter(
 
 	prefix = f"{time_prefix}{location_prefix}"
 
-	if config._LOG_MODE == "educational":
+	if config._g_log_mode == "educational":
 		if isinstance(value, dict) and "op" in value:
 			op = value["op"]
 			val = value.get("value")
@@ -115,7 +118,7 @@ def _default_formatter(
 			return f"{prefix}Returned {value!r}"
 
 	if kind == "message":
-		if not config._SHOW_MESSAGE_META:
+		if not config._g_show_message_meta:
 			return f"{value}"
 
 		return f"{prefix}{value}"
@@ -130,16 +133,16 @@ def _format_path(filename: str | None) -> str:
 	if not filename:
 		return ""
 
-	if config._PATH_MODE == "absolute":
+	if config._g_path_mode == "absolute":
 		return filename
 
-	if config._PATH_MODE == "project":
+	if config._g_path_mode == "project":
 		try:
-			return os.path.relpath(filename, config._PROJECT_ROOT)
+			return os.path.relpath(filename, config._g_project_root)
 		except Exception:
 			return filename
 
-	if config._PATH_MODE == "file":
+	if config._g_path_mode == "file":
 		return os.path.basename(filename)
 
 	return filename
@@ -170,7 +173,9 @@ def _format_message(text: str, *args: object, **kwargs: object) -> str:
 
 			filename, lineno = _get_location(frame)
 			namespace["apath"] = filename or ""
-			namespace["rpath"] = os.path.relpath(filename, config._PROJECT_ROOT) if filename else ""
+			namespace["rpath"] = (
+				os.path.relpath(filename, config._g_project_root) if filename else ""
+			)
 			namespace["fpath"] = os.path.basename(filename) if filename else ""
 
 			try:

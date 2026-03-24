@@ -197,6 +197,7 @@ def test_global_mode_full(capsys):
 	set_mode("full")
 
 	try:
+
 		@log
 		def foo():
 			return 1
@@ -215,6 +216,7 @@ def test_global_mode_edu(capsys):
 	set_mode("edu")
 
 	try:
+
 		@log
 		def foo():
 			return 1
@@ -233,6 +235,7 @@ def test_mode_toggle_mid_execution(capsys):
 	set_mode("full")
 
 	try:
+
 		@log
 		def foo():
 			a = 1  # full mode

@@ -1,21 +1,31 @@
 from __future__ import annotations
-from collections.abc import Callable, ItemsView, Iterable, KeysView, Mapping, ValuesView, Iterator
+from collections.abc import (
+	Callable,
+	ItemsView,
+	Iterable,
+	KeysView,
+	Mapping,
+	ValuesView,
+	Iterator,
+)
 
 from . import config
 from .emmiter import _emit
 from .introspection import _caller_frame, _get_location
-from typing import Generic, ParamSpec, SupportsIndex,  TypeVar, overload
-
+from typing import Generic, ParamSpec, SupportsIndex, TypeVar, overload
 
 
 class _BaseLogged:
 	_log_name: str
+
 
 T = TypeVar("T")
 K = TypeVar("K")
 V = TypeVar("V")
 P = ParamSpec("P")
 L = TypeVar("L", bound=_BaseLogged)
+
+
 def _path(obj: object) -> str:
 	"""
 	Return a readable name/path for a callable or object
@@ -25,16 +35,32 @@ def _path(obj: object) -> str:
 		return obj.__qualname__.replace(".<locals>.", ".")
 
 	return getattr(obj, "__name__", str(obj))
+
+
 @overload
 def _unwrap_value(value: LoggedObject[T]) -> dict[str, object]: ...
+
+
 @overload
 def _unwrap_value(value: LoggedList[T]) -> list[T]: ...
+
+
 @overload
 def _unwrap_value(value: LoggedDict[K, V] | dict[K, V]) -> dict[K, V]: ...
+
+
 @overload
 def _unwrap_value(value: LoggedSet[T] | set[T]) -> set[T]: ...
+
+
 @overload
 def _unwrap_value(value: tuple[T, ...]) -> tuple[T, ...]: ...
+
+
+@overload
+def _unwrap_value(value: object) -> object: ...
+
+
 def _unwrap_value(value: object):
 	"""
 	Recursively unwrap logged containers into plain Python values.
@@ -68,12 +94,19 @@ def _unwrap_value(value: object):
 	return value
 
 
-def _emit_change(name: str, op: str, state: object=None, filename: str | None=None, lineno: int | None=None, **details: str):
+def _emit_change(
+	name: str,
+	op: str,
+	state: object = None,
+	filename: str | None = None,
+	lineno: int | None = None,
+	**details: object,
+):
 	"""
 	Emit a mutation event with a readable payload
 	"""
 
-	if not config._ENABLED:
+	if not config._g_enabled:
 		return
 
 	payload: dict[str, object] = {"op": op}
@@ -88,19 +121,30 @@ def _emit_change(name: str, op: str, state: object=None, filename: str | None=No
 
 
 @overload
-def _wrap_value(value: Callable[P, T], name: str | None=None) -> Callable[P, T]:...
-@overload
-def _wrap_value(value: list[T], name: str | None=...) -> LoggedList[T]: ...
-@overload
-def _wrap_value(value: Mapping[K, V], name: str | None=...) -> LoggedDict[K, V]: ...
-@overload
-def _wrap_value(value: set[T], name: str | None=...) -> LoggedSet[T]: ...
-@overload
-def _wrap_value(value: L, name: str | None=...) -> L: ...
-@overload
-def _wrap_value(value: T, name: str | None=...) -> T: ...
+def _wrap_value(value: Callable[P, T], name: str | None = None) -> Callable[P, T]: ...
 
-def _wrap_value(value: object, name: str | None=None) -> object:
+
+@overload
+def _wrap_value(value: list[T], name: str | None = ...) -> LoggedList[T]: ...
+
+
+@overload
+def _wrap_value(value: Mapping[K, V], name: str | None = ...) -> LoggedDict[K, V]: ...
+
+
+@overload
+def _wrap_value(value: set[T], name: str | None = ...) -> LoggedSet[T]: ...
+
+
+@overload
+def _wrap_value(value: L, name: str | None = ...) -> L: ...
+
+
+@overload
+def _wrap_value(value: T, name: str | None = ...) -> T: ...
+
+
+def _wrap_value(value: object, name: str | None = None) -> object:
 	"""
 	Recursively wrap values so nested structures are tracked
 
@@ -111,29 +155,37 @@ def _wrap_value(value: object, name: str | None=None) -> object:
 	- already wrapped -> returned as-is
 	"""
 
+	safe_name = name or "NO_NAME_ERR"
+
 	if callable(value):
 		return value
 
 	if isinstance(value, _BaseLogged):
 		return value
-	# NOTE: potential bug? None by default will erase the default value of the logged objects.
-	# In any case this is a typing error.
+
+	if isinstance(value, dict):
+		return LoggedDict(value, name=safe_name)
+
 	if isinstance(value, Mapping):
-		return LoggedDict(value, name=name)
+		return LoggedDict(dict(value), name=safe_name)
 
 	if isinstance(value, list):
-		return LoggedList(value, name=name)
-	# Note: unecessary check, dict is a mapping
+		return LoggedList(value, name=safe_name)
+
 	if isinstance(value, dict):
-		return LoggedDict(value, name=name)
+		return LoggedDict(value, name=safe_name)
+
+	if isinstance(value, Mapping):
+		return LoggedDict(dict(value), name=safe_name)
 
 	if isinstance(value, set):
-		return LoggedSet(value, name=name)
+		return LoggedSet(value, name=safe_name)
 
 	if hasattr(value, "__dict__") and not isinstance(value, type):
-		return LoggedObject(value, name=name)
+		return LoggedObject(value, name=safe_name)
 
 	return value
+
 
 class LoggedObject(_BaseLogged, Generic[T]):
 	"""
@@ -143,11 +195,15 @@ class LoggedObject(_BaseLogged, Generic[T]):
 	- Tracks attribute and item changes
 	- Recursively wraps nested values
 	"""
+
 	_data: dict[str, object]
 
-	def __init__(self, initial: T=None, name: str="set") -> None:
+	def __init__(self, initial: T = None, name: str = "set") -> None:
 		# NOTE: why setattr? is there a specific reason? regular assignement
 		# is both faster and type safe.
+		# NOTE:  I defined __setattr__, so every normal assignment would
+		# trigger wrapping / logging during init and that could potentially recurse away or corrupt some internal state
+		# at least that's how I understand it, so I just use __setattr__ to bypass the custom logic
 		object.__setattr__(self, "_data", {})
 		object.__setattr__(self, "_log_name", name)
 
@@ -159,7 +215,9 @@ class LoggedObject(_BaseLogged, Generic[T]):
 		elif hasattr(initial, "__dict__"):
 			items = vars(initial).items()
 		else:
-			raise TypeError("LoggedObject can only wrap mappings or objects with __dict__")
+			raise TypeError(
+				"LoggedObject can only wrap mappings or objects with __dict__"
+			)
 
 		for key, value in items:
 			self._data[key] = _wrap_value(value, name=f"{self._log_name}.{key}")
@@ -188,9 +246,17 @@ class LoggedObject(_BaseLogged, Generic[T]):
 			filename, lineno = _get_location(frame)
 
 			if callable(wrapped):
-				_emit("set", f"{log_name}.{name}", f"<func {_path(wrapped)}>", filename=filename, lineno=lineno)
+				_emit(
+					"set",
+					f"{log_name}.{name}",
+					f"<func {_path(wrapped)}>",
+					filename=filename,
+					lineno=lineno,
+				)
 			else:
-				_emit("set", f"{log_name}.{name}", wrapped, filename=filename, lineno=lineno)
+				_emit(
+					"set", f"{log_name}.{name}", wrapped, filename=filename, lineno=lineno
+				)
 		finally:
 			del frame
 
@@ -207,9 +273,17 @@ class LoggedObject(_BaseLogged, Generic[T]):
 			filename, lineno = _get_location(frame)
 
 			if callable(wrapped):
-				_emit("set", f"{log_name}.{key}", f"<func {_path(wrapped)}>", filename=filename, lineno=lineno)
+				_emit(
+					"set",
+					f"{log_name}.{key}",
+					f"<func {_path(wrapped)}>",
+					filename=filename,
+					lineno=lineno,
+				)
 			else:
-				_emit("set", f"{log_name}.{key}", wrapped, filename=filename, lineno=lineno)
+				_emit(
+					"set", f"{log_name}.{key}", wrapped, filename=filename, lineno=lineno
+				)
 		finally:
 			del frame
 
@@ -228,7 +302,9 @@ class LoggedObject(_BaseLogged, Generic[T]):
 		frame = _caller_frame()
 		try:
 			filename, lineno = _get_location(frame)
-			_emit("set", f"{log_name}.{name}", "<deleted>", filename=filename, lineno=lineno)
+			_emit(
+				"set", f"{log_name}.{name}", "<deleted>", filename=filename, lineno=lineno
+			)
 		finally:
 			del frame
 
@@ -239,7 +315,9 @@ class LoggedObject(_BaseLogged, Generic[T]):
 		frame = _caller_frame()
 		try:
 			filename, lineno = _get_location(frame)
-			_emit("set", f"{log_name}.{key}", "<deleted>", filename=filename, lineno=lineno)
+			_emit(
+				"set", f"{log_name}.{key}", "<deleted>", filename=filename, lineno=lineno
+			)
 		finally:
 			del frame
 
@@ -252,7 +330,7 @@ class LoggedObject(_BaseLogged, Generic[T]):
 	def __contains__(self, key: str) -> bool:
 		return key in self._data
 
-	def get(self, key: str, default: T =None) -> object | T:
+	def get(self, key: str, default: T = None) -> object | T:
 		return self._data.get(key, default)
 
 	def keys(self) -> KeysView[object]:
@@ -264,7 +342,7 @@ class LoggedObject(_BaseLogged, Generic[T]):
 	def items(self) -> ItemsView[str, object]:
 		return self._data.items()
 
-	def to_dict(self)  -> dict[str, object]:
+	def to_dict(self) -> dict[str, object]:
 		def unwrap(v):
 			return _unwrap_value(v)
 
@@ -282,7 +360,7 @@ class LoggedList(list[T], _BaseLogged, Generic[T]):
 	List wrapper that logs mutations like append, sort, pop, extend, etc
 	"""
 
-	def __init__(self, initial: Iterable[T] | None=None, name: str="set"):
+	def __init__(self, initial: Iterable[T] | None = None, name: str = "set"):
 		object.__setattr__(self, "_log_name", name)
 		if initial is None:
 			initial: list[T] = []
@@ -294,13 +372,22 @@ class LoggedList(list[T], _BaseLogged, Generic[T]):
 		frame = _caller_frame()
 		try:
 			filename, lineno = _get_location(frame)
-			_emit_change(self._log_name, op, state=self, filename=filename, lineno=lineno, **details)
+			_emit_change(
+				self._log_name,
+				op,
+				state=self,
+				filename=filename,
+				lineno=lineno,
+				**details,
+			)
 		finally:
 			del frame
 
 	def __setitem__(self, key: int | slice, value: T) -> None:
 		if isinstance(key, slice):
-			wrapped = [_wrap_value(v, name=f"{self._log_name}[{i}]") for i, v in enumerate(value)]
+			wrapped = [
+				_wrap_value(v, name=f"{self._log_name}[{i}]") for i, v in enumerate(value)
+			]
 			super().__setitem__(key, wrapped)
 			self._emit("setitem", key=str(key), value=value)
 			return
@@ -339,7 +426,10 @@ class LoggedList(list[T], _BaseLogged, Generic[T]):
 
 	def extend(self, iterable: Iterable[T]) -> None:
 		items = list(iterable)
-		wrapped = [_wrap_value(v, name=f"{self._log_name}[{len(self) + i}]") for i, v in enumerate(items)]
+		wrapped = [
+			_wrap_value(v, name=f"{self._log_name}[{len(self) + i}]")
+			for i, v in enumerate(items)
+		]
 		super().extend(wrapped)
 		self._emit("extend", value=items)
 
@@ -347,8 +437,8 @@ class LoggedList(list[T], _BaseLogged, Generic[T]):
 		wrapped = _wrap_value(value, name=f"{self._log_name}[{index}]")
 		super().insert(index, wrapped)
 		self._emit("insert", index=index, value=value)
-	
-	def pop(self, index: SupportsIndex=-1) -> T:
+
+	def pop(self, index: SupportsIndex = -1) -> T:
 		value = super().pop(index)
 		self._emit("pop", index=index, value=value)
 		return value
@@ -380,7 +470,8 @@ class LoggedList(list[T], _BaseLogged, Generic[T]):
 
 	def to_list(self):
 		# NOTE: very inefficient, will copy the list 2x each time, which is not needed just to get an Iterable
-		return [_unwrap_value(v) for v in list(self)]
+		# NOTE: Thanks, I realised just self without list(self) is good enough
+		return [_unwrap_value(v) for v in self]
 
 	def __repr__(self) -> str:
 		return repr(self.to_list())  # f"{type(self).__name__}({list(self)!r})"
@@ -391,17 +482,25 @@ class LoggedDict(dict[K, V], _BaseLogged, Generic[K, V]):
 	Dict wrapper that logs mutations like setitem, update, pop, clear, etc
 	"""
 
-	def __init__(self, initial: Mapping[K, V] | Iterable[tuple[K, V]]  | None = None, name: str = "set", **kwargs: object):
+	def __init__(
+		self,
+		initial: Mapping[K, V] | Iterable[tuple[K, V]] | None = None,
+		name: str = "set",
+		**kwargs: object,
+	):
 		object.__setattr__(self, "_log_name", name)
 
 		if initial is None:
 			initial = {}
+
 		# NOTE: Inefficient, will copy the mapping even tough mapping does support items
 		# and in case of an Iterable, will copy it to the dict, to at the end re-copy it again.
+		# NOTE: Hey I modified it, it should be now
 		if isinstance(initial, Mapping):
-			items = dict(initial).items()
+			items = initial.items()
 		else:
 			items = dict(initial).items()
+
 		items = list(items) + list(kwargs.items())
 
 		super().__init__()
@@ -412,7 +511,14 @@ class LoggedDict(dict[K, V], _BaseLogged, Generic[K, V]):
 		frame = _caller_frame()
 		try:
 			filename, lineno = _get_location(frame)
-			_emit_change(self._log_name, op, state=self, filename=filename, lineno=lineno, **details)
+			_emit_change(
+				self._log_name,
+				op,
+				state=self,
+				filename=filename,
+				lineno=lineno,
+				**details,
+			)
 		finally:
 			del frame
 
@@ -463,7 +569,7 @@ class LoggedDict(dict[K, V], _BaseLogged, Generic[K, V]):
 
 		del self[name]
 
-	def update(self, *args:  V, **kwargs: V) -> None:
+	def update(self, *args: V, **kwargs: V) -> None:
 		data = dict(*args, **kwargs)
 		for k, v in data.items():
 			dict.__setitem__(self, k, _wrap_value(v, name=f"{self._log_name}.{k}"))
@@ -509,7 +615,7 @@ class LoggedSet(set[T], _BaseLogged, Generic[T]):
 	Set wrapper that logs mutations like add, remove, update, clear, etc
 	"""
 
-	def __init__(self, initial: Iterable[T] | None=None, name: str="set") -> None:
+	def __init__(self, initial: Iterable[T] | None = None, name: str = "set") -> None:
 		object.__setattr__(self, "_log_name", name)
 
 		if initial is None:
@@ -522,7 +628,14 @@ class LoggedSet(set[T], _BaseLogged, Generic[T]):
 		frame = _caller_frame()
 		try:
 			filename, lineno = _get_location(frame)
-			_emit_change(self._log_name, op, state=self, filename=filename, lineno=lineno, **details)
+			_emit_change(
+				self._log_name,
+				op,
+				state=self,
+				filename=filename,
+				lineno=lineno,
+				**details,
+			)
 		finally:
 			del frame
 
@@ -534,8 +647,9 @@ class LoggedSet(set[T], _BaseLogged, Generic[T]):
 	def update(self, *others: Iterable[T]) -> None:
 		values = []
 		# NOTE: inefficient, extend can work with any Iterable.
+		# NOTE: Thanks again, your're right
 		for other in others:
-			values.extend(list(other))
+			values.extend(other)
 
 		wrapped = {_wrap_value(v, name=f"{self._log_name}.item") for v in values}
 		super().update(wrapped)

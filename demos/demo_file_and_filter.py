@@ -2,7 +2,7 @@ from logeye import log, set_global_log_file, toggle_global_log_file
 
 print("\n--- Global file logging ---")
 
-set_global_log_file("global.log")
+set_global_log_file("demo_txt/global.log")
 toggle_global_log_file(True)
 
 x = log(10)
@@ -17,7 +17,7 @@ log("this goes to stdout")
 print("\n--- Per-function file logging ---")
 
 
-@log(filepath="func.log")
+@log(filepath="demo_txt/func.log")
 def add(a, b):
 	total = a + b
 	return total
@@ -27,11 +27,11 @@ add(2, 3)
 
 print("\n--- Mixed file logging ---")
 
-set_global_log_file("global.log")
+set_global_log_file("demo_txt/global.log")
 toggle_global_log_file(True)
 
 
-@log(filepath="special.log")
+@log(filepath="demo_txt/special.log")
 def special():
 	x = 100
 	return x
@@ -83,19 +83,14 @@ def dijkstra(graph, start):
 	return distances
 
 
-graph = {
-	"A": {"B": 1, "C": 4},
-	"B": {"C": 2, "D": 5},
-	"C": {"D": 1},
-	"D": {}
-}
+graph = {"A": {"B": 1, "C": 4}, "B": {"C": 2, "D": 5}, "C": {"D": 1}, "D": {}}
 
 dijkstra(graph, "A")
 
 print("\n--- Filtering + file ---")
 
 
-@log(filter=["queue"], filepath="queue.log")
+@log(filter=["queue"], filepath="demo_txt/queue.log")
 def process():
 	queue = []
 	queue.append(1)

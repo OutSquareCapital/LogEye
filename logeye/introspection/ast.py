@@ -1,9 +1,9 @@
 import os
 import ast
 import linecache
-from types import FrameType
 
 from .. import config
+from types import FrameType
 from .frames import _caller_frame
 
 # Tracks how many log() calls happened on a single line
@@ -31,9 +31,9 @@ def _is_direct_log_call(node: ast.AST) -> bool:
 	"""
 
 	return (
-			isinstance(node, ast.Call)
-			and isinstance(node.func, ast.Name)
-			and (node.func.id == "log" or node.func.id == "l")
+		isinstance(node, ast.Call)
+		and isinstance(node.func, ast.Name)
+		and (node.func.id == "log" or node.func.id == "l")
 	)
 
 
@@ -68,7 +68,11 @@ def _is_assigned_call(frame: FrameType | None) -> bool:
 		if isinstance(stmt, ast.Assign) and _is_direct_log_call(stmt.value):
 			return True
 
-		if isinstance(stmt, ast.AnnAssign) and stmt.value is not None and _is_direct_log_call(stmt.value):
+		if (
+			isinstance(stmt, ast.AnnAssign)
+			and stmt.value is not None
+			and _is_direct_log_call(stmt.value)
+		):
 			return True
 
 	return False
@@ -93,7 +97,7 @@ def _get_call_index_in_line(frame: FrameType):
 	return idx
 
 
-def _infer_name_from_frame(frame: FrameType | None, default: str="set") -> str:
+def _infer_name_from_frame(frame: FrameType | None, default: str = "set") -> str:
 	"""
 	Infer variable name from a simple single-line assignment
 
@@ -135,7 +139,7 @@ def _infer_name_from_frame(frame: FrameType | None, default: str="set") -> str:
 	return default
 
 
-def _infer_callsite_name(default: str="set") -> str:
+def _infer_callsite_name(default: str = "set") -> str:
 	frame = _caller_frame()
 	try:
 		return _infer_name_from_frame(frame, default)
@@ -182,13 +186,20 @@ def _get_assignment_target_for_call(frame: FrameType | None) -> str | None:
 				# Pipe
 				if isinstance(stmt.value, ast.BinOp):
 					if isinstance(stmt.value.op, ast.BitOr):
-						if isinstance(stmt.value.right, ast.Name) and stmt.value.right.id == config._LOG_PIPE_NAME:
+						if (
+							isinstance(stmt.value.right, ast.Name)
+							and stmt.value.right.id == config._g_log_pipe_name
+						):
 							if isinstance(stmt.targets[0], ast.Name):
 								return stmt.targets[0].id
 
 				# Tuple
 				if isinstance(stmt.value, ast.Tuple):
-					targets_list = stmt.targets[0].elts if isinstance(stmt.targets[0], ast.Tuple) else []
+					targets_list = (
+						stmt.targets[0].elts
+						if isinstance(stmt.targets[0], ast.Tuple)
+						else []
+					)
 					call_index = _get_call_index_in_line(frame)
 
 					if call_index is not None and call_index < len(targets_list):
@@ -222,7 +233,9 @@ def _get_assignment_target_for_call(frame: FrameType | None) -> str | None:
 
 			# Tuples
 			if isinstance(node.value, ast.Tuple):
-				targets = node.targets[0].elts if isinstance(node.targets[0], ast.Tuple) else []
+				targets = (
+					node.targets[0].elts if isinstance(node.targets[0], ast.Tuple) else []
+				)
 
 				call_index = _get_call_index_in_line(frame)
 

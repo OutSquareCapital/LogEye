@@ -16,4 +16,3 @@ if __name__ == "__main__":
 	y = log(10)
 
 	log("test is $x")
-

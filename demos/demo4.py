@@ -1,11 +1,6 @@
 from logeye import log
 
-obj = log({
-	"x": 4,
-	"y": {
-		"z": 5
-	}
-})
+obj = log({"x": 4, "y": {"z": 5}})
 
 obj.x = 4
 obj.y.z = 5

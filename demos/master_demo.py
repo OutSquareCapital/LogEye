@@ -1,4 +1,11 @@
-from logeye import log, l, set_path_mode, toggle_logs, reset_output_formatter, set_output_formatter
+from logeye import (
+	log,
+	l,
+	set_path_mode,
+	toggle_logs,
+	reset_output_formatter,
+	set_output_formatter,
+)
 
 log("\n\n=== BASIC MESSAGES ===")
 
@@ -60,12 +67,7 @@ g(5)
 
 log("\n\n=== OBJECT TRACKING ===")
 
-obj = log({
-	"x": 1,
-	"nested": {
-		"y": 2
-	}
-})
+obj = log({"x": 1, "nested": {"y": 2}})
 
 obj.x = 10
 obj.nested.y = 20

@@ -6,8 +6,10 @@ from typing import TYPE_CHECKING
 from . import config
 from .formatting import _formatter
 from .introspection import _is_user_code
+
 if TYPE_CHECKING:
 	from .core import Kind
+
 
 def _write_line_to_file(filepath: str, line: str) -> None:
 	directory = os.path.dirname(filepath)
@@ -18,26 +20,37 @@ def _write_line_to_file(filepath: str, line: str) -> None:
 		f.write(line + "\n")
 
 
-def _emit(kind: Kind, name: str, value: object, *, filename: str | None=None, lineno: int | None=None, filepath: str | None=None, show_time: bool=True, show_file: bool=True, show_lineno: bool=True) -> None:
-	if config._START_TIME is None:
-		config._START_TIME = time.perf_counter()
+def _emit(
+	kind: Kind,
+	name: str,
+	value: object,
+	*,
+	filename: str | None = None,
+	lineno: int | None = None,
+	filepath: str | None = None,
+	show_time: bool = True,
+	show_file: bool = True,
+	show_lineno: bool = True,
+) -> None:
+	if config._g_start_time is None:
+		config._g_start_time = time.perf_counter()
 
-	if not config._ENABLED:
+	if not config._g_enabled:
 		return
 
 	if filename and not _is_user_code(filename):
 		return
 
-	if config._LOG_MODE == "educational":
+	if config._g_log_mode == "educational":
 		if kind == "change" and isinstance(value, dict):
 			if value.get("op") == "extend" and not value.get("value"):
 				return
 
-	if config._LOG_MODE == "educational":
+	if config._g_log_mode == "educational":
 		filename = None
 		lineno = None
 
-	elapsed = time.perf_counter() - config._START_TIME
+	elapsed = time.perf_counter() - config._g_start_time
 	line = _formatter(
 		elapsed,
 		kind,
@@ -58,8 +71,8 @@ def _emit(kind: Kind, name: str, value: object, *, filename: str | None=None, li
 		_write_line_to_file(filepath, line)
 		return
 
-	if config._GLOBAL_LOG_FILE_ENABLED and config._GLOBAL_LOG_FILE:
-		_write_line_to_file(config._GLOBAL_LOG_FILE, line)
+	if config._g_log_file_enabled and config._g_log_file:
+		_write_line_to_file(config._g_log_file, line)
 		return
 
 	print(line)

@@ -31,7 +31,7 @@ def test_nested_lambda(capsys):
 
 
 def test_lambda_returning_lambda(capsys):
-	f = lambda: (lambda: log("inner"))
+	f = lambda: lambda: log("inner")
 
 	inner = f()
 	result = inner()

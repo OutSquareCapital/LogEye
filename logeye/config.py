@@ -1,48 +1,51 @@
 import os
 import sys
+
 from typing import Literal, TypeAlias
 
-_ENABLED = True
-_START_TIME = None
+_g_enabled = True
+_g_start_time = None
 
 # "absolute" -> full path
 # "project"  -> relative to project root
 # "file"     -> filename only
-_PATH_MODE = "file"
+_g_path_mode = "file"
 
 # Whether message logs include timestamp + file info
-_SHOW_MESSAGE_META = True
-_DECORATORS_ONLY = False
-_LOG_MODE = "full"  # "full" | "educational"
+_g_show_message_meta = True
+_g_deco_only = False
+_g_log_mode = "full"  # "full" | "educational"
 
-_SHOW_TIME = True
-_SHOW_FILE = True
-_SHOW_LINENO = True
+_g_show_time = True
+_g_show_file = True
+_g_show_lineno = True
 
-_PROJECT_ROOT = os.getcwd()
-_LIBRARY_ROOT = os.path.dirname(__file__)
-_EXEC_ROOT = os.path.dirname(os.path.abspath(sys.argv[0]))
+_g_project_root = os.getcwd()
+_g_library_root = os.path.dirname(__file__)
+_g_exec_root = os.path.dirname(os.path.abspath(sys.argv[0]))
 
-_LOG_PIPE_NAME = "l"
+_g_log_pipe_name = "l"
 
-_GLOBAL_LOG_FILE = None
-_GLOBAL_LOG_FILE_ENABLED = True
+_g_log_file = None
+_g_log_file_enabled = True
 PathMode: TypeAlias = Literal["absolute", "project", "file"]
 
 Mode: TypeAlias = Literal["edu", "educational", "full"]
+
 
 # =========
 #  TOGGLES
 # =========
 
+
 def toggle_logs(enabled: bool) -> None:
-	global _ENABLED
-	_ENABLED = enabled
+	global _g_enabled
+	_g_enabled = enabled
 
 
 def toggle_global_log_file(enabled: bool) -> None:
-	global _GLOBAL_LOG_FILE_ENABLED
-	_GLOBAL_LOG_FILE_ENABLED = enabled
+	global _g_log_file_enabled
+	_g_log_file_enabled = enabled
 
 
 def toggle_decorator_log_only(enabled: bool) -> None:
@@ -50,8 +53,8 @@ def toggle_decorator_log_only(enabled: bool) -> None:
 	Toggle only @log-decorated tracing.
 	"""
 
-	global _DECORATORS_ONLY
-	_DECORATORS_ONLY = enabled
+	global _g_deco_only
+	_g_deco_only = enabled
 
 
 def toggle_message_metadata(enabled: bool) -> None:
@@ -65,8 +68,8 @@ def toggle_message_metadata(enabled: bool) -> None:
 		log("hello") -> prints "[time] file:line hello"
 	"""
 
-	global _SHOW_MESSAGE_META
-	_SHOW_MESSAGE_META = enabled
+	global _g_show_message_meta
+	_g_show_message_meta = enabled
 
 
 # =========
@@ -78,22 +81,26 @@ def set_mode(mode: Mode) -> None:
 	full or  edu / educational
 	"""
 
-	global _LOG_MODE
-	_LOG_MODE = _normalize_mode(mode)
+	global _g_log_mode
+	_g_log_mode = _normalize_mode(mode)
 
 
 def set_global_log_file(filepath: str | None) -> None:
 	"""
 	Route LogEye output to this file globally.
 	"""
-	global _GLOBAL_LOG_FILE
-	_GLOBAL_LOG_FILE = None if filepath is None else os.fspath(filepath)
+	global _g_log_file
+	_g_log_file = None if filepath is None else os.fspath(filepath)
 
 
 def set_path_mode(mode: PathMode) -> None:
-	global _PATH_MODE
+	global _g_path_mode
 
-	_PATH_MODE = mode
+	if mode not in ("absolute", "project", "file"):
+		raise ValueError("mode must be: absolute, project, file")
+
+	_g_path_mode = mode
+
 
 def _normalize_mode(mode: Mode) -> Mode:
 	if mode in ("edu", "educational"):
@@ -101,3 +108,5 @@ def _normalize_mode(mode: Mode) -> Mode:
 
 	if mode == "full":
 		return "full"
+
+	raise ValueError("mode must be: full, edu, educational")

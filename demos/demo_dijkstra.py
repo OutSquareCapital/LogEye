@@ -31,11 +31,6 @@ def dijkstra(graph, start):
 	return distances
 
 
-graph = {
-	"A": {"B": 1, "C": 4},
-	"B": {"C": 2, "D": 5},
-	"C": {"D": 1},
-	"D": {}
-}
+graph = {"A": {"B": 1, "C": 4}, "B": {"C": 2, "D": 5}, "C": {"D": 1}, "D": {}}
 
 dijkstra(graph, "A")

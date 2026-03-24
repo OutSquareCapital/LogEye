@@ -3,7 +3,7 @@ set -euo pipefail
 
 sleep_with_dots() {
   local total=${1:-15}
-  local interval=2
+  local interval=3
   local elapsed=0
 
   while [ $elapsed -lt $total ]; do
@@ -122,6 +122,21 @@ if [[ "$GIT_ONLY" == false ]]; then
     echo "Error: Version $VERSION not found in CHANGELOG.md"
     exit 1
   fi
+
+  echo "==> Running Ruff format"
+  ruff format .
+
+  echo "==> Running Ruff check"
+  if ! ruff check .; then
+    echo "⚠️ Ruff reported issues"
+  fi
+
+  echo "==> Running basedpyright"
+
+  PYRIGHT_OUTPUT=$(basedpyright logeye 2>&1 || true)
+  SUMMARY=$(echo "$PYRIGHT_OUTPUT" | tail -n 1)
+
+  echo "basedpyright: $SUMMARY"
 
   echo "==> Running tests"
   pytest

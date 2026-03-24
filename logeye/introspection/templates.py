@@ -18,7 +18,9 @@ def _expand_template(text: str) -> str:
 		filename, lineno = _get_location(frame)
 
 		namespace["apath"] = filename or ""
-		namespace["rpath"] = os.path.relpath(filename, config._PROJECT_ROOT) if filename else ""
+		namespace["rpath"] = (
+			os.path.relpath(filename, config._g_project_root) if filename else ""
+		)
 		namespace["fpath"] = os.path.basename(filename) if filename else ""
 
 		return Template(text).safe_substitute(namespace)

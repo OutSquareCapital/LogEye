@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.4.0] - 2026-03-24
+
+### Added
+* Educational mode now includes clear return output:
+    * `(function) returned (value)` style formatting for better readability
+* Integrated Ruff for consistent formatting and linting
+* Added basedpyright for static type checking
+* Introduced initial type annotations across the codebase
+* Improved educational mode examples in README and demos
+
+### Changed
+* Improved consistency of call and return formatting
+* Updated publishing pipeline:
+    * automatic Ruff formatting
+    * lint + type checks during release
+* Internal refactors to support typing and future maintainability
+
+### Fixed
+* Various formatting inconsistencies between full and educational modes
+* Edge cases in return logging output
+* Minor issues in logging behaviour uncovered during type integration
+
+### Developer Experience
+* Added Ruff integration for standardised code style
+* Added basedpyright integration for type safety
+* Improved contribution workflow and code consistency
+
+### Plans
+* Multithreading support!
+
 ## [1.3.2] - 2026-03-24
 
 ### Added

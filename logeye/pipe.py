@@ -44,4 +44,4 @@ class _LogPipe:
 		return other
 
 
-l = _LogPipe()
+l = _LogPipe()  # noqa: E741

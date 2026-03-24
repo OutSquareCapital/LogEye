@@ -1,10 +1,8 @@
-from types import FrameType
-
-
 import os
 import inspect
 
 from .. import config
+from types import FrameType
 
 
 def _get_location(frame: FrameType | None) -> tuple[str | None, int | None]:
@@ -20,7 +18,7 @@ def _caller_frame() -> FrameType | None:
 	try:
 		frame = frame.f_back
 
-		library_root = os.path.abspath(config._LIBRARY_ROOT)
+		library_root = os.path.abspath(config._g_library_root)
 
 		while frame:
 			filename = frame.f_code.co_filename
