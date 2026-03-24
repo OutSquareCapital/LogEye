@@ -1,7 +1,8 @@
 import sys
 import inspect
 import functools
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
+from typing import TYPE_CHECKING, Literal, Protocol
 
 from . import config
 from .emmiter import _emit
@@ -20,11 +21,13 @@ from .wrappers import (
 	_path,
 )
 from .introspection.frames import _caller_frame, _get_location
-
+if TYPE_CHECKING:
+	from .config import Mode
 _NO_VALUE = object()
 
+Level = Literal["call", "state", "full"]
 
-def _resolve_filepath(file=None, filepath=None):
+def _resolve_filepath(file: str |None =None, filepath: str | None=None) -> str | None:
 	if file is not None and filepath is not None:
 		raise TypeError("Use only one of 'file' or 'filepath'")
 	return file if file is not None else filepath
@@ -35,13 +38,13 @@ def _resolve_filepath(file=None, filepath=None):
 # ===============
 
 def _log_class(
-		cls,
+		cls: type,
 		*,
-		filepath=None,
-		show_time=True,
-		show_file=True,
-		show_lineno=True
-):
+		filepath: str | None=None,
+		show_time: bool=True,
+		show_file: bool=True,
+		show_lineno: bool=True
+) -> type:
 	"""
 	Wrap a class so its instances become LoggedObjects
 
@@ -57,7 +60,7 @@ def _log_class(
 
 	class LoggedClass(cls):
 		@functools.wraps(original_init)
-		def __init__(self, *args, **kwargs):
+		def __init__(self, *args: object, **kwargs: object):
 			if not config._ENABLED:
 				original_init(self, *args, **kwargs)
 				return
@@ -79,7 +82,7 @@ def _log_class(
 
 			original_init(self, *args, **kwargs)
 
-		def __setattr__(self, name, value):
+		def __setattr__(self, name: str, value: object) -> None:
 			if name.startswith("_"):
 				object.__setattr__(self, name, value)
 				return
@@ -129,7 +132,7 @@ def _log_class(
 # WATCH (value logging)
 # =====================
 
-def watch(value, name=None, *, show_time=True, show_file=True, show_lineno=True):
+def watch(value: object, name: str | None=None, *, show_time: bool=True, show_file: bool=True, show_lineno: bool=True):
 	"""
 	Log without changing behaviour
 	"""
@@ -188,15 +191,15 @@ def watch(value, name=None, *, show_time=True, show_file=True, show_lineno=True)
 # ========================
 
 def _log_function(
-		func,
+		func: Callable[..., object],
 		*,
-		filepath=None,
-		level="full",
-		filter_set=None,
-		mode="full",
-		show_time=True,
-		show_file=True,
-		show_lineno=True
+		filepath: str | None=None,
+		level: Level="full",
+		filter_set: set[str] | None=None,
+		mode: Mode="full",
+		show_time: bool=True,
+		show_file: bool=True,
+		show_lineno: bool=True
 ):
 	"""
 	Wrap a function to trace:
@@ -233,7 +236,7 @@ def _log_function(
 		call_id = call_counter
 		call_name = f"{func_path}{'' if call_counter == 1 else f'_{call_id}'}"
 
-		def _should_emit(kind, name):
+		def _should_emit(kind, name: str) -> bool:
 			if mode == "educational":
 				var = name.split(".")[-1]
 
@@ -417,12 +420,12 @@ def _log_function(
 # ========================
 
 def _log_object(
-		obj,
-		name=None,
+		obj: object,
+		name: str | None=None,
 		*,
-		show_time=True,
-		show_file=True,
-		show_lineno=True
+		show_time: bool=True,
+		show_file: bool=True,
+		show_lineno: bool=True
 ):
 	if not config._ENABLED or config._DECORATORS_ONLY:
 		return obj
@@ -463,12 +466,12 @@ def _log_object(
 
 
 def _log_message(
-		text,
-		*args,
-		show_time=True,
-		show_file=True,
-		show_lineno=True,
-		**kwargs
+		text: str,
+		*args: object,
+		show_time: bool=True,
+		show_file: bool=True,
+		show_lineno: bool=True,
+		**kwargs: object
 ):
 	frame = _caller_frame()
 
@@ -518,17 +521,17 @@ def _log_message(
 # =====================
 
 def log(
-		obj=_NO_VALUE,
-		*args,
-		file=None,
-		filepath=None,
-		level="full",
-		filter=None,
-		mode=None,
-		show_time=None,
-		show_file=None,
-		show_lineno=None,
-		**kwargs
+		obj: object=_NO_VALUE,
+		*args: object,
+		file: str | None=None,
+		filepath: str | None=None,
+		level: Level="full",
+		filter: Iterable[str] | None=None,
+		mode: Mode | None=None,
+		show_time: bool | None=None,
+		show_file: bool | None=None,
+		show_lineno: bool | None=None,
+		**kwargs: object
 ):
 	"""
 	Dispatches behaviour based on input type:
