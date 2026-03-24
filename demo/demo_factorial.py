@@ -1,4 +1,4 @@
-from logeye import log
+from logeye import log, l
 
 l("FACTORIAL - BY ITERATION")
 
@@ -14,10 +14,10 @@ def factorial(n):
 
 factorial(5)
 
-l("FACTORIAL - BY RECURRENCY")
+l("FACTORIAL - BY RECURSION")
 
 
-# Recurrency
+# Recursion
 @log
 def factorial(n):
 	if n == 1:

@@ -1,4 +1,4 @@
-from logeye import log
+from logeye import log, l
 
 l("DIJKSTRA - SHORTEST PATH")
 

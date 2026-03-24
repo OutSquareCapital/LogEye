@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1] - 2026-03-24
+
+### Added
+- Comprehensive README overhaul with clearer structure and examples
+
+### Dev / Tooling
+- Improved release pipeline with automated versioning and GitHub releases
+
 ## [1.3.0] - 2026-03-24
 
 ### Added
