@@ -34,3 +34,8 @@ Homepage = "https://github.com/MattFor/LogEye"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["logeye*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
