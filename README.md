@@ -44,7 +44,7 @@ Output:
 [0.000s] Calling add_edu(2, 3)
 [0.000s] a = 2
 [0.000s] b = 3
-[0.000s] Returned 5
+[0.000s] add_edu(2, 3) returned 5
 ```
 
 # Table of Contents
@@ -184,12 +184,19 @@ def my_function():
 ```text
 [0.000s] Calling factorial(5)
 [0.000s] n = 5
-[0.000s] result = 1
-[0.000s] result = 2
-[0.000s] result = 6
-[0.000s] result = 24
-[0.000s] result = 120
-[0.000s] Returned 120
+[0.000s] Calling factorial#2(4)
+[0.000s] n = 4
+[0.000s] Calling factorial#3(3)
+[0.000s] n = 3
+[0.000s] Calling factorial#4(2)
+[0.000s] n = 2
+[0.000s] Calling factorial#5(1)
+[0.000s] n = 1
+[0.000s] factorial#5(1) returned 1
+[0.000s] factorial#4(2) returned 2
+[0.000s] factorial#3(3) returned 6
+[0.000s] factorial#2(4) returned 24
+[0.001s] factorial(5) returned 120
 ```
 
 ## What changes in educational mode

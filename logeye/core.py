@@ -187,6 +187,19 @@ def watch(value, name=None, *, show_time=True, show_file=True, show_lineno=True)
 #     FUNCTION LOGGING
 # ========================
 
+# Helpers
+def _format_call_signature(name, args, kwargs):
+	arg_parts = [", ".join(repr(a) for a in args)] if args else []
+	kw_parts = [", ".join(f"{k}={v!r}" for k, v in kwargs.items())] if kwargs else []
+	joined = ", ".join([p for p in arg_parts + kw_parts if p])
+	return f"{name}({joined})"
+
+
+def _shorten_name(name: str) -> str:
+	parts = [p for p in name.split(".") if not p.startswith("test_")]
+	return ".".join(parts[-2:]) if len(parts) >= 2 else parts[-1]
+
+
 def _log_function(
 		func,
 		*,
@@ -231,7 +244,7 @@ def _log_function(
 		# Track multiple calls f.e recursion / repeat calls
 		call_counter += 1
 		call_id = call_counter
-		call_name = f"{func_path}{'' if call_counter == 1 else f'_{call_id}'}"
+		call_name = f"{func_path}{'' if call_counter == 1 else f'#{call_id}'}"
 
 		def _should_emit(kind, name):
 			if mode == "educational":
@@ -276,6 +289,9 @@ def _log_function(
 
 		call_frame = _caller_frame()
 		call_filename, call_lineno = _get_location(call_frame)
+
+		short_name = _shorten_name(call_name)
+		call_signature = _format_call_signature(short_name, args, kwargs)
 
 		if _should_emit("call", call_name):
 			_emit(
@@ -385,7 +401,10 @@ def _log_function(
 							_emit(
 								"return",
 								call_name,
-								arg,
+								{
+									"value": arg,
+									"call_signature": call_signature,
+								},
 								filename=filename,
 								lineno=lineno,
 								filepath=filepath,

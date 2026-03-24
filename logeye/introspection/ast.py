@@ -221,7 +221,6 @@ def _get_assignment_target_for_call(frame):
 
 			# Tuples
 			if isinstance(node.value, ast.Tuple):
-				values = node.value.elts
 				targets = node.targets[0].elts if isinstance(node.targets[0], ast.Tuple) else []
 
 				call_index = _get_call_index_in_line(frame)

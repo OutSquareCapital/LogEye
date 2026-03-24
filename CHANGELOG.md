@@ -3,19 +3,19 @@
 ## [1.3.2] - 2026-03-24
 
 ### Added
-- set_mode() for setting the mode globally (f.e to education)
-- More tests for the global mode setting
+* set_mode() for setting the mode globally (f.e to education)
+* More tests for the global mode setting
 
 ### Improved
-- README examples
+* README examples
 
 ## [1.3.1] - 2026-03-24
 
 ### Added
-- Comprehensive README overhaul with clearer structure and examples
+* Comprehensive README overhaul with clearer structure and examples
 
 ### Dev / Tooling
-- Improved release pipeline with automated versioning and GitHub releases
+* Improved release pipeline with automated versioning and GitHub releases
 
 ## [1.3.0] - 2026-03-24
 
@@ -49,7 +49,7 @@
 
 * **Output clarity in educational mode**
 
-    * Removed internal noise (`<func ...>`, debug artifacts)
+    * Removed internal noise (`<func ...>`, debug artefacts)
     * Simplified function names (no test/module prefixes)
     * More natural mutation messages:
 
@@ -78,16 +78,16 @@
 
 ### Added
 
-- `@log(level=...)` for verbosity control (`call`, `state`, `full`)
-- `@log(filter=[...])` to log only selected variables
-- Per-function file logging via `@log(filepath=...)`
-- Global file logging support
-- Decorator-only logging mode toggle
+* `@log(level=...)` for verbosity control (`call`, `state`, `full`)
+* `@log(filter=[...])` to log only selected variables
+* Per-function file logging via `@log(filepath=...)`
+* Global file logging support
+* Decorator-only logging mode toggle
 
 ### Improved
 
-- Overall logging flexibility and usability
-- Reduced noise in complex traces
+* Overall logging flexibility and usability
+* Reduced noise in complex traces
 
 ---
 
@@ -95,7 +95,7 @@
 
 ### Changed
 
-- Updated README documentation
+* Updated README documentation
 
 ---
 
@@ -103,7 +103,7 @@
 
 ### Fixed
 
-- Class wrapping issues
+* Class wrapping issues
 
 ---
 
@@ -111,7 +111,7 @@
 
 ### Fixed
 
-- Wrapped object representation
+* Wrapped object representation
 
 ---
 
@@ -119,7 +119,7 @@
 
 ### Fixed
 
-- Incorrect wrapping of callables
+* Incorrect wrapping of callables
 
 ---
 
@@ -127,9 +127,9 @@
 
 ### Fixed
 
-- Mutation tracking issues
-- Nested path logging bugs
-- Test failures
+* Mutation tracking issues
+* Nested path logging bugs
+* Test failures
 
 ---
 
@@ -137,11 +137,11 @@
 
 ### Added
 
-- Mutation logging support for tracked objects
+* Mutation logging support for tracked objects
 
 ### Improved
 
-- Core logging capabilities
+* Core logging capabilities
 
 ---
 
@@ -149,9 +149,9 @@
 
 ### Added
 
-- Initial release
-- Variable logging with name inference
-- Function tracing
-- Object and mapping tracking
-- Message logging system
-- Basic test suite
+* Initial release
+* Variable logging with name inference
+* Function tracing
+* Object and mapping tracking
+* Message logging system
+* Basic test suite

@@ -24,7 +24,7 @@ def test_return_formatting(capsys):
 
 	out = capsys.readouterr().out
 
-	assert "Returned 123" in out
+	assert "foo() returned 123" in out
 	assert "(return)" not in out
 
 

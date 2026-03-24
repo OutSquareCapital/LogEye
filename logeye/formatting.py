@@ -102,6 +102,12 @@ def _default_formatter(
 			return f"{prefix}Calling {func_name}"
 
 		if kind == "return":
+			if isinstance(value, dict):
+				call_signature = value.get("call_signature")
+				return_value = value.get("value")
+				if call_signature:
+					return f"{prefix}{call_signature} returned {return_value!r}"
+
 			return f"{prefix}Returned {value!r}"
 
 	if kind == "message":
