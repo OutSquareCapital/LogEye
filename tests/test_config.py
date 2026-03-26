@@ -1,13 +1,9 @@
-from logeye import log, set_path_mode
-from logeye.config import (
-	toggle_logs,
-	toggle_decorator_log_only,
-)
+from logeye import log, config
 
 
 def test_logoff(capsys):
-	toggle_logs(False)
-	toggle_decorator_log_only(False)
+	config.toggle_logs(False)
+	config.toggle_decorator_log_only(False)
 
 	log("hidden")
 
@@ -16,8 +12,8 @@ def test_logoff(capsys):
 
 
 def test_logon(capsys):
-	toggle_logs(True)
-	toggle_decorator_log_only(False)
+	config.toggle_logs(True)
+	config.toggle_decorator_log_only(False)
 
 	log("visible")
 
@@ -26,10 +22,10 @@ def test_logon(capsys):
 
 
 def test_path_modes(capsys):
-	toggle_logs(True)
-	toggle_decorator_log_only(False)
+	config.toggle_logs(True)
+	config.toggle_decorator_log_only(False)
 
-	set_path_mode("absolute")
+	config.set_path_mode("absolute")
 	log("test")
 
 	out = capsys.readouterr().out
@@ -37,8 +33,8 @@ def test_path_modes(capsys):
 
 
 def test_decorator_only_blocks_normal_logs(capsys):
-	toggle_logs(True)
-	toggle_decorator_log_only(True)
+	config.toggle_logs(True)
+	config.toggle_decorator_log_only(True)
 
 	log("should not appear")
 
@@ -47,8 +43,8 @@ def test_decorator_only_blocks_normal_logs(capsys):
 
 
 def test_decorator_only_allows_decorated(capsys):
-	toggle_logs(True)
-	toggle_decorator_log_only(True)
+	config.toggle_logs(True)
+	config.toggle_decorator_log_only(True)
 
 	@log
 	def foo():
@@ -62,8 +58,8 @@ def test_decorator_only_allows_decorated(capsys):
 
 
 def test_level_call_only(capsys):
-	toggle_logs(True)
-	toggle_decorator_log_only(False)
+	config.toggle_logs(True)
+	config.toggle_decorator_log_only(False)
 
 	@log(level="call")
 	def foo():
@@ -80,8 +76,8 @@ def test_level_call_only(capsys):
 
 
 def test_level_state(capsys):
-	toggle_logs(True)
-	toggle_decorator_log_only(False)
+	config.toggle_logs(True)
+	config.toggle_decorator_log_only(False)
 
 	@log(level="state")
 	def foo():
@@ -97,8 +93,8 @@ def test_level_state(capsys):
 
 
 def test_filter_variables(capsys):
-	toggle_logs(True)
-	toggle_decorator_log_only(False)
+	config.toggle_logs(True)
+	config.toggle_decorator_log_only(False)
 
 	@log(filter=["x"])
 	def foo():

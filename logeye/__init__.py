@@ -1,17 +1,9 @@
 import time
 
-from .pipe import l
+from .config import config
 from .core import log, watch
-from .formatting import set_output_formatter, reset_output_formatter
-from .config import (
-	toggle_logs,
-	toggle_decorator_log_only,
-	toggle_message_metadata,
-	toggle_global_log_file,
-	set_mode,
-	set_path_mode,
-	set_global_log_file,
-)
+from .formatting import reset_output_formatter, set_output_formatter
+from .pipe import l
 
 w = watch
 
@@ -22,13 +14,7 @@ __all__ = [
 	"l",
 	"watch",
 	"w",
-	"toggle_logs",
-	"toggle_global_log_file",
-	"toggle_message_metadata",
-	"toggle_decorator_log_only",
-	"set_mode",
-	"set_path_mode",
-	"set_global_log_file",
+	"config",
 	"set_output_formatter",
 	"reset_output_formatter",
 ]

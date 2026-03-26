@@ -1,4 +1,4 @@
-from logeye import log, set_mode
+from logeye import config, log
 
 
 def test_call_formatting(capsys):
@@ -194,7 +194,7 @@ def test_algorithm_like_flow(capsys):
 
 
 def test_global_mode_full(capsys):
-	set_mode("full")
+	config.set_mode("full")
 
 	try:
 
@@ -209,11 +209,11 @@ def test_global_mode_full(capsys):
 		assert "(call)" in out
 		assert "Calling" not in out
 	finally:
-		set_mode("full")
+		config.set_mode("full")
 
 
 def test_global_mode_edu(capsys):
-	set_mode("edu")
+	config.set_mode("edu")
 
 	try:
 
@@ -228,20 +228,20 @@ def test_global_mode_edu(capsys):
 		assert "Calling foo()" in out
 		assert "(call)" not in out
 	finally:
-		set_mode("full")
+		config.set_mode("full")
 
 
 def test_mode_toggle_mid_execution(capsys):
-	set_mode("full")
+	config.set_mode("full")
 
 	try:
 
 		@log
 		def foo():
 			a = 1  # full mode
-			set_mode("edu")
+			config.set_mode("edu")
 			b = 2  # edu mode
-			set_mode("full")
+			config.set_mode("full")
 			c = 3  # back to full
 
 		foo()
@@ -253,4 +253,4 @@ def test_mode_toggle_mid_execution(capsys):
 		assert "b = 2" in out
 
 	finally:
-		set_mode("full")
+		config.set_mode("full")

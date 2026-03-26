@@ -1,5 +1,5 @@
 import pytest
-from logeye import log
+from logeye import log, config
 
 
 def test_inline_expression(capsys):
@@ -26,7 +26,5 @@ def test_inline_expression_error():
 
 
 def test_invalid_path_mode():
-	from logeye import set_path_mode
-
 	with pytest.raises(ValueError):
-		set_path_mode("invalid")
+		config.set_path_mode("invalid")

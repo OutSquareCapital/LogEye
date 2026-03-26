@@ -1,33 +1,10 @@
 import os
 import sys
+from dataclasses import dataclass
+from typing import ClassVar, Literal, TypeAlias
 
-from typing import Literal, TypeAlias
+from typing_extensions import Self
 
-_g_enabled = True
-_g_start_time = None
-
-# "absolute" -> full path
-# "project"  -> relative to project root
-# "file"     -> filename only
-_g_path_mode = "file"
-
-# Whether message logs include timestamp + file info
-_g_show_message_meta = True
-_g_deco_only = False
-_g_log_mode = "full"  # "full" | "educational"
-
-_g_show_time = True
-_g_show_file = True
-_g_show_lineno = True
-
-_g_project_root = os.getcwd()
-_g_library_root = os.path.dirname(__file__)
-_g_exec_root = os.path.dirname(os.path.abspath(sys.argv[0]))
-
-_g_log_pipe_name = "l"
-
-_g_log_file = None
-_g_log_file_enabled = True
 PathMode: TypeAlias = Literal["absolute", "project", "file"]
 
 Mode: TypeAlias = Literal["edu", "educational", "full"]
@@ -36,77 +13,88 @@ Mode: TypeAlias = Literal["edu", "educational", "full"]
 # =========
 #  TOGGLES
 # =========
+@dataclass(slots=True)
+class Config:
+	_instance: ClassVar[Self | None] = None
+	logs: bool | None = None
+	log_file: bool | None = None
+	log_path: str | None = None
+	decorators: bool | None = None
+	message_metadata: bool | None = None
+	mode: Mode | None = None
+	path_mode: PathMode | None = None
+	_g_enabled: bool = True
+	_g_path_mode: str = "file"
+	_g_show_message_meta: bool = True
+	_g_deco_only: bool = False
+	_g_log_mode: str = "full"
+	_g_show_time: bool = True
+	_g_show_file: bool = True
+	_g_show_lineno: bool = True
+	_g_log_file: str | None = None
+	_g_log_file_enabled: bool = True
+	_g_project_root: str = os.getcwd()
+	_g_library_root: str = os.path.dirname(__file__)
+	_g_exec_root: str = os.path.dirname(os.path.abspath(sys.argv[0]))
+	_g_log_pipe_name: str = "l"
+	_g_start_time: float | None = None
 
+	def __new__(cls) -> Self:
+		if cls._instance is None:
+			cls._instance = object.__new__(cls)
+		return cls._instance
 
-def toggle_logs(enabled: bool) -> None:
-	global _g_enabled
-	_g_enabled = enabled
+	def toggle_logs(self, enabled: bool) -> None:
+		self._g_enabled = enabled
 
+	def toggle_global_log_file(self, enabled: bool) -> None:
+		self._g_log_file_enabled = enabled
 
-def toggle_global_log_file(enabled: bool) -> None:
-	global _g_log_file_enabled
-	_g_log_file_enabled = enabled
+	def toggle_decorator_log_only(self, enabled: bool) -> None:
+		"""
+		Toggle only @log-decorated tracing.
+		"""
+		self._g_deco_only = enabled
 
+	def toggle_message_metadata(self, enabled: bool) -> None:
+		"""
+		Enable or disable metadata for message logs
 
-def toggle_decorator_log_only(enabled: bool) -> None:
-	"""
-	Toggle only @log-decorated tracing.
-	"""
+		If disabled:
+			log("hello") -> prints just "hello"
 
-	global _g_deco_only
-	_g_deco_only = enabled
+		If enabled:
+			log("hello") -> prints "[time] file:line hello"
+		"""
+		self._g_show_message_meta = enabled
 
+	# =========
+	#  SETTERS
+	# =========
+	def set_mode(self, mode: Mode) -> None:
+		"""
+		Set global logging mode
+		full or  edu / educational
+		"""
 
-def toggle_message_metadata(enabled: bool) -> None:
-	"""
-	Enable or disable metadata for message logs
+		self._g_log_mode = mode
 
-	If disabled:
-		log("hello") -> prints just "hello"
+	def set_global_log_file(self, filepath: str | None) -> None:
+		"""
+		Route LogEye output to this file globally.
+		"""
+		self._g_log_file = os.fspath(filepath) if filepath is not None else None
 
-	If enabled:
-		log("hello") -> prints "[time] file:line hello"
-	"""
+	def set_path_mode(self, mode: PathMode) -> None:
+		if mode not in ("absolute", "project", "file"):
+			raise ValueError(f"Invalid path mode: {mode!r}")
+		self._g_path_mode = mode
 
-	global _g_show_message_meta
-	_g_show_message_meta = enabled
-
-
-# =========
-#  SETTERS
-# =========
-def set_mode(mode: Mode) -> None:
-	"""
-	Set global logging mode
-	full or  edu / educational
-	"""
-
-	global _g_log_mode
-	_g_log_mode = _normalize_mode(mode)
-
-
-def set_global_log_file(filepath: str | None) -> None:
-	"""
-	Route LogEye output to this file globally.
-	"""
-	global _g_log_file
-	_g_log_file = None if filepath is None else os.fspath(filepath)
-
-
-def set_path_mode(mode: PathMode) -> None:
-	global _g_path_mode
-
-	if mode not in ("absolute", "project", "file"):
-		raise ValueError("mode must be: absolute, project, file")
-
-	_g_path_mode = mode
-
-
-def _normalize_mode(mode: Mode) -> Mode:
-	if mode in ("edu", "educational"):
-		return "educational"
-
-	if mode == "full":
+	def _normalize_mode(self, mode: Mode) -> str:
+		"""Normalize mode to 'full' or 'educational'."""
+		if mode in ("edu", "educational"):
+			return "educational"
 		return "full"
 
-	raise ValueError("mode must be: full, edu, educational")
+
+config = Config()
